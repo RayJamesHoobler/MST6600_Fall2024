@@ -1,0 +1,104 @@
+/*-- scss:defaults --*/
+$presentation-title-slide-text-align: left;
+
+@import url(https://fonts.googleapis.com/css?family=News+Cycle:400,700);
+@import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
+
+// fonts
+$font-family-sans-serif: Lato, sans-serif !default;
+
+$presentation-font-size-root:	24px;
+$presentation-font-smaller:	0.7;
+$presentation-line-height:	1.1;
+
+
+$presentation-block-margin: 18px;
+
+// colors
+$body-bg: #fff !default;
+$body-color: #222 !default;
+$link-color: #00008b !default;
+$selection-bg: rgba(0, 0, 0, 0.99);
+
+// headings
+$presentation-heading-font: "News Cycle", sans-serif !default;
+
+$presentation-h1-font-size: 2.25em !default;
+$presentation-h2-font-size: 1.5em !default;
+$presentation-h3-font-size: 1.0em !default;
+$presentation-h4-font-size: 1.0em !default;
+
+$presentation-h1-text-shadow: #ddd 1px 1px;
+
+// inline code 
+$code-color: #222 !default;
+$code-bg: #eee !default;
+
+// code blocks
+$code-block-bg: #ffffcc !default;
+$code-block-border-color: lighten($body-color, 60%) !important;
+$code-block-font-size:	0.70em !important;
+
+/*-- scss:rules --*/
+
+.reveal h1 {
+  color: #000;
+}
+
+.reveal h2 {
+  &:after {
+    content:"";
+    display:block;
+    width:100%;
+    border-top: 1px solid #000;
+    margin: 0.1em 0 1em;
+  }
+}
+
+sup {
+  font-size: 0.4em !important;
+  color: #0000ff !important;
+  vertical-align: 1.5em !important;
+}
+
+sup::before {
+  content: " " !important;
+}
+
+.aside-footnotes  {
+  color: #0000ff;
+  font-size: 0.8em;
+  margin-left: 80px !important;
+  margin-bottom: 0px !important;
+}
+
+.blue-notes {
+  color: #0000ff;
+  font-size: 0.8em;
+  margin-left: 0px !important;
+}
+
+.small-text {
+  font-size: 0.5em !important;
+}
+
+@mixin background-full {
+  background-size: cover;
+  background-position: center;
+}
+
+.theme-section {
+  &:is(.slide-background) {
+    background-color: #117ac9;
+    @include background-full;
+  }
+}
+
+.transparent {
+  background-color: #117ac950;
+  padding: 10px;
+}
+
+.references {
+  line-height: 2em;
+}

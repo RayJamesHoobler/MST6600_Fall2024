@@ -1,0 +1,401 @@
+---
+title: "Introduction to Exploratory Data Analysis and Applied Statistical Techniques"
+subtitle: "Module 01"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+# Data Visualization {.theme-section}  
+
+::: {.notes}   
+This section follows chapter 1 of *R for Data Science*. Everyone should read the chapter and work through the in-text examples to confirm their installation of R and RStudio are working correctly and to get a feel for the programming environment.
+:::  
+
+## Visualizations Are Not New
+
+:::: {.columns}
+
+::: {.column width=20%}
+![1977](https://m.media-amazon.com/images/I/71aiG2h5WjL._SL1500_.jpg){width=100%}
+:::
+::: {.column width=10%}
+
+:::  
+::: {.column width=70%}
+> "The simple graph has brought more information nto the data analyst's mind than any other device." <br> <br>
+---John Tukey  
+
+***Exploratory Data Analysis*** by John Tukey[@tukey_exploratory_1977], is now considered a classic in the field of data analysis and statistics.
+:::  
+
+:::: 
+
+Four chapters are devoted to *Graphic Presentation* in my copy of ***Applied General Statistics*** [@croxton_applied_1946]. (The book was first published in 1939.)
+
+::: {.notes}  
+First, I want to point out that people have been working with data and data visualizations for a long time. Prior to the personal computer, plots and charts were created by hand, by skilled draftsman.
+
+John Tukey is often cited for his work, and his book ***Exploratory Data Analysis*** is a classic in the field. 
+
+Today, most people use Microsoft Excel to create basic plots and charts; however, modern tools within R and python provide a more powerful and flexible environment for data visualization.
+:::  
+
+## R for Data Science (2e)
+
+:::: {.columns}  
+
+::: {.column width=20%}  
+![2023](https://r4ds.hadley.nz/cover.jpg){width=100%}  
+:::  
+
+::: {.column width=10%}  
+
+:::  
+
+::: {.column width=70%}  
+*R for Data Science* is an introduction into data manipulation and visualization. The authors are proponents of the **tidyverse** and **ggplot2**. The tidyverse is a collection of R packages designed for data science. This is in contrast to *base R*. 
+
+The tidyverse provides an integrated framework that allows beginners to quickly get up to speed with data manipulation.
+
+ggpot2 is a plotting system for R, based on the grammar of graphics. Once you become familiar with ggplot, you will see it's presence in many publications. ***A Layered Grammar of Graphics*** [@wickham_layered_2010] provides the philosophical framework for ggplot2.
+:::  
+
+::::
+
+::: {.notes}  
+
+We will mostly use the tidyverse and ggplot2 in this course. The tidyverse is a collection of R packages designed for data manipulation. The ggplot2 package is a plotting system for R, based on the grammar of graphics.
+:::  
+
+## Prerequisites  
+
+Before you begin any readings, you should have R and RStudio installed on your computer.  
+
+Follow the instructions on the [Posit.co](https://posit.co/download/rstudio-desktop/) website for installing the RStudio IDE (integrated development environment). 
+
+1. Install R from the [Rstudio.com mirror of the CRAN website](https://cran.rstudio.com/).  
+2. Install RStudio from [Posit.co](https://posit.co/download/rstudio-desktop/).
+
+::: {.notes}  
+Getting to the right pages is not a clear as it should be. I'm assuming Posit working to increase their server based products; however, the RStuido IDE is freely available for download.
+
+R is easier to find. Their main website is [R-project.org](https://www.r-project.org/). The link in the slide is for the RStudio mirror of the CRAN website.
+:::  
+
+## Getting Started 
+
+Once you have R and RStudio installed, start RStudio and type `library(tidyverse)` in the console.
+
+```{r}
+#| code-fold: show
+library(tidyverse)
+```
+
+<br>  
+
+You'll see the following message the first time you load the package.
+
+![](screenshots/starting the tidyverse.png){.absolute width=70%}
+
+## The Palmer Penguins Dataset  
+
+The Palmer Penguins dataset is a popular dataset for learning data visualization. It is bundled with the **palmerpenguins** package. The dataset was created by Allison Horst, Alison Hill, and Kristen Gorman. The dataset is available on [GitHub](https://github.com/allisonhorst/palmerpenguins).   
+
+```{r}
+#| code-fold: show
+
+library(palmerpenguins)
+```
+
+:::: {.columns}
+
+::: {.column width=20%}
+![](https://github.com/allisonhorst/palmerpenguins/raw/main/man/figures/logo.png)
+:::  
+
+::: {.column width=10%}  
+
+:::  
+
+::: {.column width=70%}  
+![](screenshots/palmerpenguins.png)    
+:::  
+
+::::  
+
+::: {.notes}  
+The Palmer Penguins dataset is a popular dataset for learning data visualization. The dataset was created by Allison Horst, Alison Hill, and Kristen Gorman. 
+
+The dataset was partially created as an alternative to the Iris dataset that is often used in introductory data science courses. The Palmer Penguins dataset is more complex and mirrors challenges you find when working with real data. Thus, the Iris dataset and provides a better opportunity to learn and apply data manipulation and visualization techniques you will probably encounter with your own data.  
+::: 
+
+## Data Frames 
+
+Data frames will be the default data structure we use in this course. Data frames should look familiar to anyone who has used spreadsheets. 
+
+```{r}
+#| code-fold: show
+
+penguins
+```
+
+::: {.r-stack .transparent}
+Variables are in columns and observations are in rows.  
+:::  
+
+::: {.notes}
+Data frames will be the default data structure we use in this course. They have a number of nice properties that make them easy to work with. 
+
+1. Variables are in columns and observations are in rows.
+2. The tools of the tidyverse make data frames easy easy to manipulate and visualize. 
+3. Unlike other data structures, data frames can hold different types of data in each column. We can see in the penguins dataset that the first column data type is a factor, the third column is a double precision number, and the last column for the year is an integer. 
+
+In single precision, 32 bits are used to represent floating-point number, while in double precision, 64 bits are used; so single precision holds up to 8 decimal places, while double precision holds up to 16 decimal places. By default, we normally work with double precision numbers.  
+
+In the tidyverse, you will often see the term **tibble** used instead of data frame. Tibbles are a modern version of data frames that provide some additional features, I will often use the terms interchangeably; however, there are some subtle differences between the two. 
+:::  
+
+
+## "Ultimate goal" for Chapter 1 in *R for Data Science* {.smaller}  
+
+```{r}
+#| code-fold: true
+#| warning: false
+#| fig-width: 6
+#| fig-height: 4
+library(ggthemes)
+
+ggplot(
+  data = penguins, 
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+  ) + 
+  geom_point(mapping = aes(color = species)) +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper Length (mm)",
+    y = "Body Mass (g)",
+    color = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+## Creating a ggplot: Step 1 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins)
+``` 
+
+## Creating a ggplot: Step 2 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+)
+```
+
+## Creating a ggplot: Step 3 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) + 
+  geom_point()
+```
+
+::: {.callout-warning}
+	
+Warning: [38;5;232mRemoved 2 rows containing missing values or values outside the scale range (`geom_point()`).[39m
+:::
+
+## Creating a ggplot: Step 4 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)
+) + 
+  geom_point()
+```
+
+## Creating a ggplot: Step 5 {auto-animate="true"}  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g, color = species)
+) + 
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+:::  
+
+::: {.column width=40%}  
+::: {.callout-important}
+When aesthetic mappings are defined in the `ggplot()` function, they are inherited by all layers.
+
+The aesthetic "color" is being applied to both the `geom_point()` and `geom_smooth()` layers.
+:::  
+:::  
+
+::::  
+
+## Creating a ggplot: Step 6 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(mapping = aes(color = species)) +
+  geom_smooth(method = "lm")
+```
+
+## Creating a ggplot: Step 7 {auto-animate="true"}  
+
+```{r}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(mapping = aes(color = species, shape = species)) +
+  geom_smooth(method = "lm")
+```
+
+::: {.notes}  
+Best practices are to include multiple aesthetics. Here we can easily have color and shape represent the species.
+::: 
+
+## Creating a ggplot: Step 8 {auto-animate="true"}  
+
+```{{r}}
+#| code-fold: show
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(mapping = aes(color = species, shape = species)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper Length (mm)",
+    y = "Body Mass (g)",
+    color = "Species",
+    shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+## {}
+
+```{r}
+#| code-fold: true
+#| fig-align: center
+
+ggplot(
+  data = penguins,
+  mapping = aes(x = flipper_length_mm, y = body_mass_g)
+) +
+  geom_point(mapping = aes(color = species, shape = species)) +
+  geom_smooth(method = "lm") +
+  labs(
+    title = "Body mass and flipper length",
+    subtitle = "Dimensions for Adelie, Chinstrap, and Gentoo Penguins",
+    x = "Flipper Length (mm)",
+    y = "Body Mass (g)",
+    color = "Species",
+    shape = "Species"
+  ) +
+  scale_color_colorblind()
+```
+
+## Module 1 Assignment 1
+
+Create a new Quarto html document and answer questions 1 through 10 in the *R for Data Science* section: 1.2.5 Exercises.
+
+# Exploratory Data Analysis {.theme-section}
+
+## NIST/SEMATECH e-Handbook of Statistical Methods 
+
+:::: {.columns}
+
+::: {.column width="30%"}
+![](https://www.itl.nist.gov/div898/handbook/gifs/hm2.gif){.absolute width="200px"}
+:::  
+
+::: {.column width="70%"}
+The NIST/SEMATECH e-Handbook of Statistical Methods is a collaborative project involving the National Institute of Standards and Technology (NIST) and SEMATECH. 
+
+NIST is a non-regulatory federal agency within the U.S. Department of Commerce. The main role of NIST is to promote U.S. innovation and industrial competitiveness by advancing measurement science, standards, and technology.
+
+SEMATECH was a research consortium comprised of semiconductor manufacturers and suppliers.
+:::  
+
+::::  
+
+## EDA Techniques  
+
+In-line `block code` would look like this.
+
+## EDA Assumptions
+
+
+
+
+# End of Module 01 {.theme-section}  
+
+## References 
+
+::: {#refs}
+:::  
+
+
+
+
+
