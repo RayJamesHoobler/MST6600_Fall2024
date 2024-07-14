@@ -236,7 +236,7 @@ ggplot(
 
 ::: {.callout-warning}
 	
-Warning: [38;5;232mRemoved 2 rows containing missing values or values outside the scale range (`geom_point()`).[39m
+Warning: [38;5;232mRemoved 2 rows containing missing values or values outside the scale range (`geom_point()`).[39m
 :::
 
 ## Visualizations with ggplot: Step 4 {auto-animate="true"}  
@@ -420,7 +420,7 @@ SEMATECH was a research consortium comprised of semiconductor manufacturers and 
 
 ## EDA Assumptions According to NIST/SEMATECH
 
-[2.1](https://www.itl.nist.gov/div898/handbook/eda/section2/eda21.htm) 
+[1.2.1](https://www.itl.nist.gov/div898/handbook/eda/section2/eda21.htm) 
 
 >Data from a process or experiment "behaves like" 
 >
