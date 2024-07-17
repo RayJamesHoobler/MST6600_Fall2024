@@ -28,7 +28,7 @@ $presentation-h2-font-size: 1.5em !default;
 $presentation-h3-font-size: 1.0em !default;
 $presentation-h4-font-size: 1.0em !default;
 
-$presentation-h1-text-shadow: #ddd 1px 1px;
+$presentation-h1-text-shadow: #000 1px 1px;
 
 // inline code 
 $code-color: #222 !default;
@@ -42,7 +42,8 @@ $code-block-font-size:	0.70em !important;
 /*-- scss:rules --*/
 
 .reveal h1 {
-  color: #000;
+  color: #fff;
+  text-shadow: 1px 1px #000;
 }
 
 .reveal h2 {
