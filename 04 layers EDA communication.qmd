@@ -1,0 +1,47 @@
+---
+title: "Visualize: Layers, Exploratory Data Analysis, Communication"
+subtitle: "Module 04"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---  
+
+# Layers (ggplo2) {.theme-section}  
+
+# Exploratory Data Analysis (EDA) {.theme-section}  
+
+# Communiation {.theme-section}  
+
+
+
+# {.theme-section visibility=uncounted}  
+
+<h1>End of Module 3</h1>  
+
+## References 
+
+::: {#refs}
+:::  
