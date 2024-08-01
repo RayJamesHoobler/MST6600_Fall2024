@@ -467,7 +467,9 @@ ggplot(data = <DATA>) +
 
 # Exploratory Data Analysis (EDA) {.theme-section}  
 
-## EDA with the MACHINE.DAT Data (1/3)  
+## EDA with the MACHINE.DAT Data (1/3) {.smaller}  
+
+Location **AND** Variation 
 
 ```{r}
 #| code-fold: show
@@ -475,28 +477,286 @@ ggplot(data = <DATA>) +
 machine |> 
   group_by(machine, time) |>
   summarise(mean_diameter = mean(diameter), 
-            sd_diameter = sd(diameter), ci_diameter = 1.96 * sd(diameter) / sqrt(n())) |>
+            sd_diameter = sd(diameter), 
+            ci_diameter = 1.96 * sd(diameter) / sqrt(n())) |>
   ungroup() |>
   mutate(machine_time = str_c(machine, time, sep = "_")) |>
   ggplot() +
-  geom_point(aes(x = machine_time, y = mean_diameter, color = machine), 
-             position = position_dodge(width = 0.5)) +
-  geom_errorbar(aes(x = machine_time, ymin = mean_diameter - ci_diameter, ymax = mean_diameter + ci_diameter), 
-                width = 0.25, position = position_dodge(width = 0.5))
+  geom_point(aes(x = machine_time, y = mean_diameter, color = machine), size = 4) +
+  geom_errorbar(aes(x = machine_time, 
+                    ymin = mean_diameter - ci_diameter, 
+                    ymax = mean_diameter + ci_diameter), width = 0.25)
 ```
 
 
-## EDA with the Palmer mpg Data (2/3)  
+## EDA with the MACHINE.DAT data (2/3)  
+
+Location **AND** Variation  
 
 ```{r}
-mpg
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_density(aes(x = diameter, fill = machine), alpha=1/3) +
+  geom_vline(xintercept = 0.125, linetype = "dashed") +
+  scale_x_continuous(limits = c(0.1175, 0.1325)) +
+  facet_grid(rows = vars(time))
+```
+
+## EDA with the MACHINE.DAT data (3/3)
+
+Location **AND** Variation  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = machine, y = diameter, color = time), width = 0.1, position = position_jitterdodge(dodge.width = .75, jitter.width = 0.2)) +
+  geom_boxplot(aes(x = machine, y = diameter, fill = time), alpha = 1/3)
 ```
 
 
+## Assignment  
 
-# Communiation {.theme-section}  
+* Carry out an EDA on the [FURNACE.DAT dataset](https://www.itl.nist.gov/div898/handbook/datasets/FURNACE.DAT).   
+* Are there any trends in the data that would be difficult to detect with standard summary statistics? 
+* Are there any outliers in the data? (A description of the experiment is available on the [NIST website](https://www.itl.nist.gov/div898/handbook/ppc/section5/ppc511.htm))
 
+```{r}
+#| code-fold: true
 
+column_names <- c("RUN ZONE WAFER THICKNESS") |> 
+  str_to_lower() |> 
+  str_split(" ") |> 
+  unlist()
+
+furnace <- read_table("datasets/FURNACE.DAT", 
+                      skip = 25, 
+                      col_names = column_names, 
+                      col_types = "iffd")
+
+furnace |> 
+  ggplot() +
+  geom_point(aes(x = run, y = thickness))
+```
+
+# Communication {.theme-section}  
+
+## Labels {.smaller} 
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+
+For most plots, the `labs()` layer will provide the right amount of customization.  
+
+::: {.fragment}  
+![](https://m.media-amazon.com/images/I/71EN1l+uQKL._SL1500_.jpg){width=200px}
+::: 
+
+:::  
+::: {.column width=70%}  
+
+```{r}
+#| code-fold: show
+#| warning: false
+#| code-line-numbers: "|4-9|"
+
+penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  labs(title = "Bill Length and Depth Serve as Natural Classifiers", 
+       subtitle = "palmerpenguins: Palmer Archipelago (Antarctica) Penguin Data",
+       x = "Bill Length (mm)", 
+       y = "Bill Depth (mm)", 
+       color = "Species",
+       caption = "https://github.com/allisonhorst/palmerpenguins")
+```
+
+:::  
+
+::::  
+
+## Annotations  
+
+* `geom_text()`  
+
+* `annotate()`   
+
+## Annotations: `geom_text()` (1/2)  
+
+### Calculate mean values for Bill Depth and Bill Length for each species  
+
+```{r}
+#| code-fold: show
+
+mean_bill_depth_length <- penguins |> 
+  group_by(species) |> 
+  summarise(mean_bill_length = mean(bill_length_mm, na.rm = TRUE), 
+            mean_bill_depth = mean(bill_depth_mm, na.rm = TRUE)) |> 
+  ungroup()
+
+mean_bill_depth_length
+```
+
+## Annotations: `geom_text()` (2/2)
+
+```{r}
+#| code-fold: true
+#| warning: false
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+library(ggrepel)
+
+penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species), alpha = 1/4, show.legend = FALSE) +
+  geom_point(data = mean_bill_depth_length, 
+             aes(x = mean_bill_length, y = mean_bill_depth, color = species),
+             size = 4, show.legend = FALSE) +
+  geom_label_repel(data = mean_bill_depth_length, 
+            aes(x = mean_bill_length, y = mean_bill_depth, label = species, color = species), 
+            size = 4, fontface = "bold", box.padding = 1, show.legend = FALSE, seed = 42) +
+  labs(
+    title = "Comparison of Means",
+    subtitle = "Bill Length and Depth by Species",
+    x = "Bill Length (mm)",
+    y = "Bill Depth (mm)",
+    caption = "palmerpenguins: Palmer Archipelago (Antarctica) Penguin Data"
+  ) +
+  theme_classic()
+
+```
+
+## Annotations: `geom_text()` (3/3)
+
+```{r}
+plot(morley)
+```
+
+## Annotations: `annotate()`  
+
+```{r}
+#| code-fold: true 
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+furnace |> 
+  ggplot() +
+  geom_point(aes(x = seq_along(thickness), y = thickness)) +
+  geom_hline(yintercept = 560, linetype = "dashed") +
+  geom_hline(yintercept = c(460, 660), linetype = "dashed", color = "red") +
+  annotate("text", x = 175, y = 560-50, label = "Target Thickness", color = "black", size = 4, fontface = "bold") +
+  annotate("segment", x = 175, xend = 190, y = 520, yend = 560, 
+           arrow = arrow(ends = "last", length = unit(0.3, "cm")), 
+           size = 0.5, color = "black") +
+  annotate("text", x = 20, y = 460+10, label = "Lower Control Limit", color = "red", size = 4, fontface = "bold") +
+  annotate("text", x = 20, y = 660-10, label = "Upper Control Limit", color = "red", size = 4, fontface = "bold") +
+  labs(
+    title = "Run Sequence Plot of Furnace Data",
+    subtitle = "Thickness of processed wafers",
+    x = "Sample Number",
+    y = "Thickness (Å)",
+    caption = "\nhttps://www.itl.nist.gov/div898/handbook/ppc/section5/ppc511.htm"
+  ) +
+  theme_classic()
+```
+
+## Scales  
+
+## Themes 
+
+## Layout  
+
+## Assignment {.smaller}  
+
+### When Online Content Disappears  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+Recreate the plot from the article:  
+
+[Pew Research](https://www.pewresearch.org/data-labs/2024/05/17/when-online-content-disappears/)  
+![](https://www.pewresearch.org/wp-content/uploads/sites/20/2024/05/pl_2024.05.17_link-rot_0_01.png){width=100%}  
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show  
+
+# Font looks close to google font "work sans"  
+
+pew_data <- c(38, 35, 31, 30, 26, 31, 32, 27, 22, 15, 8)
+years <- 2013:2023
+color = "#ed9d09"
+
+pew_df <- tibble(year = years, percent = pew_data)
+pew_df
+```
+
+:::  
+
+::::  
+
+## Sandbox
+
+```{r}
+#| code-fold: true
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+library(ggtext)
+
+caption_text = paste(str_wrap("Source: Pew Research Center analysi of a random selection of URLs collected by the Common Crawl web repository (n=999,989) and checked using page and DNS response codes. Web pages defined as inaccessible if they returned a status code of 204, 400, 404, 410, 500, 501, 502, 503, 523 or did not return a valid status code.",
+                 width = 86),
+        "\n\"When Online Content Disappears\"")
+
+pew_df |> 
+  ggplot() +
+  geom_line(aes(x = year, y = percent), color = color, linewidth = 3) +
+  geom_point(aes(x = year, y = percent), shape = 21 , color = color, fill = "white", size = 4, stroke = 1) +
+  geom_text(aes(x = year, y = percent, label = paste0(percent, "%")), nudge_y = 2.2, nudge_x = 0.0, size = 4, color = color, data = filter(pew_df, year == 2013)) +
+  geom_text(aes(x = year, y = percent, label = percent), nudge_y = 2.2, nudge_x = 0, size = 4, color = color, data = filter(pew_df, year >= 2014)) +
+#  annotate("text", x = 2014.05, y = 5, label = "PEW RESEARCH CENTER", color = "black", size = 4, fontface = "bold") +
+  labs(
+    title = "38% of webpages from 2013 are no longer accessible",
+    subtitle = "% of links from each year that are no longer accessible as of October 2023",
+    x = "",
+    y = NULL,
+    caption = caption_text,
+    tag = "PEW RESEARCH CENTER"
+    ) +
+  theme_minimal() +
+  scale_y_continuous(limits = c(5, 42)) +
+  scale_x_continuous(limits = c(2012.75, 2023.25), breaks = 2013:2023) +
+  theme(
+    plot.title = element_markdown(size = 20, face = "bold"),
+    plot.title.position = "plot",
+    plot.subtitle = element_markdown(size = 14, face = "italic", color = "#666666"),
+    plot.caption = element_text(size = 12, face = "italic", hjust = 0, color = "#666666"),
+    plot.caption.position = "plot",
+    axis.text.x = element_text(size = 12),
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    axis.text.y = element_blank(),
+    plot.tag.location = "plot",
+    plot.tag.position = "bottomright",
+    plot.tag = element_text(size = 12, face = "bold", color = "black"),
+    panel.grid = element_blank()
+  )
+```
 
 # {.theme-section visibility=uncounted}  
 
