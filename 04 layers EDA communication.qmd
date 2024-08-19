@@ -633,11 +633,6 @@ penguins |>
 
 ```
 
-## Annotations: `geom_text()` (3/3)
-
-```{r}
-plot(morley)
-```
 
 ## Annotations: `annotate()`  
 
@@ -669,11 +664,281 @@ furnace |>
   theme_classic()
 ```
 
-## Scales  
+## Scales (1/4)  
 
-## Themes 
+:::: {.columns}  
 
-## Layout  
+::: {.column width=50%}
+
+[FRED Economic Data](https://fred.stlouisfed.org/series/MEHOINUSA672N)
+
+**Source:** [U.S. Census Bureau](http://www.census.gov/) 
+
+**Release:** [Income and Poverty in the United States](http://www.census.gov/topics/income-poverty/income.html)  
+
+**Units:**  2022 CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted
+
+**Frequency:**  Annual
+
+Household data are collected as of March.
+
+>. . . the Consumer Price Index retroactive series using current methods (R-CPI-U-RS) presents an estimate of the CPI for all Urban Consumers (CPI-U) from 1978 to the present that incorporates, when possible, most of the improvements made over that time span into the entire series.
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show
+rmhi <- read_csv("datasets/MEHOINUSA672N.csv", col_names = TRUE) |> 
+  rename(date = DATE, median_income = MEHOINUSA672N)
+rmhi |> head()
+```
+
+:::  
+
+::::  
+
+## Scales (2/4)  
+
+### Plot the data  
+
+```{r}
+#| code-fold: true 
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue")
+```
+
+## Scale (3/4)  
+
+:::: {.columns}  
+
+:::  {.column width=50%}  
+
+### Add labels
+
+```{r}
+#| code-fold: true
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  theme_linedraw()
+```
+
+:::  
+
+::: {.column width=50%}  
+
+### What else?
+
+::: {.fragment}
+
+* Update the y-axis to include commas (or dollar symbols).  
+* Set the x-axis and y-axis limits to provide starting and ending points.  
+* Customize x-axis and y-axis break points (tick marks).  
+* Customize various fonts as needed.  
+
+:::  
+
+:::  
+
+:::: 
+
+## Scale (4/4)  
+
+### Update the graphic to include the suggestions above 
+
+```{r}
+#| code-fold: true
+#| code-line-numbers: "|1-2|14-15|"
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw() 
+```
+
+## Themes (1/2)
+
+### Themes give you considerable control over the appearance of your plot.
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw()
+``` 
+
+:::  
+
+::: {.column width=50%}  
+
+### Proposed changes:  
+
+::: {.fragment}  
+
+* Increase the font size of the title and make the subtitle italic.
+* Change the font size of the x and y axis text.  
+* Move the title, subtitle, and caption to the left. 
+* Remove the x-axis and y-axis labels (use the subtitle for y-label).
+
+Look at **?theme**
+
+:::  
+
+:::  
+
+::::
+
+## Themes (2/2)  
+
+### Update the graphic to include the suggestions above  
+
+:::: {.columns}  
+
+:::  {.column width=50%}  
+
+Original visualization:  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw()
+``` 
+
+:::  
+
+::: {.column width=50%}  
+
+Updated visualization:  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "CPI-U-RS Adjusted Dollars (2022), Not Seasonally Adjusted",
+    x = NULL,
+    y = NULL,
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw() +
+  theme(
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.title.position = "plot",
+    plot.subtitle = element_text(size = 14, face = "italic", hjust = 0),
+    axis.title.x = element_blank(),
+    axis.text = element_text(size = 12),
+    axis.title.y = element_blank(),
+    plot.caption = element_text(size = 10, hjust = 0, vjust = 0)
+  )
+```
+
+:::  
+
+::::  
+
+
+## Layout (1/2)  
+
+### Patchwork!
+
+[patchwork](https://patchwork.data-imaginist.com/)
+
+>The goal of patchwork is to make it ridiculously simple to combine separate ggplots into the same graphic. As such it tries to solve the same problem as `gridExtra::grid.arrange()` and `cowplot::plot_grid` but using an API that incites exploration and iteration, and scales to arbitrarily complex layouts.
+
+```{r}
+#| code-fold: show
+
+library(patchwork)
+```
+
+## Layout (2/2)
+
+### Combine the two plots  
+
+```{r}
+#| code-fold: true
+#| warning: false
+#| code-line-numbers: "11|"
+
+p1 <- penguins |> 
+  ggplot() +
+  geom_boxplot(aes(x = species, y = bill_depth_mm, fill = species), show.legend = FALSE) +
+  labs(tag = "A") + theme(plot.tag.location = "panel", plot.tag.position = "topright")
+
+p2 <- penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  labs(tag = "B") +theme(plot.tag.location = "panel", plot.tag.position = "topright")
+
+(p1 + p2) + plot_layout(guides = "collect")
+```
+
+
+
 
 ## Assignment {.smaller}  
 
@@ -760,7 +1025,7 @@ pew_df |>
 
 # {.theme-section visibility=uncounted}  
 
-<h1>End of Module 3</h1>  
+<h1>End of Module 4</h1>  
 
 ## References 
 

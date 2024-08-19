@@ -1,0 +1,1750 @@
+---
+title: "Probability Distributions, Precision, Repeatability, <br>Reproducibility (Stability), <br>and Comparisons"
+subtitle: "Module 05"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---  
+
+## Libraries 
+
+```{r}
+#| code-fold: show 
+library(tidyverse)  
+library(ggtext)
+library(ggridges)
+library(latex2exp)
+```
+
+::: {.notes}
+In this section, we'll look at probability distributions, precision, repeatability, reproducibility, and comparisons.
+
+These are key concepts in understanding the variability of data and the accuracy of measurements. We'll primarily use readings from the NIST e-Handbook to guide our discussion and use examples they provide to illustrate the concepts. 
+
+The important takeaway is to understand the terminology and how to apply these concepts in practice.
+
+This week's readings cover the fundamentals and are intended to give you a solid foundation in statistical analysis that you can extend to your own work.
+:::  
+
+
+# Probability Distributions {.theme-section}
+
+## Why Do We Care?  
+
+:::: {.columns}  
+
+::: {.column width=60%}
+
+- We can visualize a population based on given parameters  
+- We can use probability distributions to calculate **confidence intervals** for descriptive statistics  
+  - and extend this to the calculation of critical regions to perform hypothesis testing  
+- Compare our data against a given distribution (i.e., is a parameter in our data *normally* distributed or follow another distribution)  
+- Use distributions to create example datasets  
+
+:::  
+
+::::  
+
+# Discrete versus Continuous Distributions {.theme-section}  
+
+## Discrete  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+1.  The probability that $x$ has a discrete value is $p(x)$
+2.  $p(x)$ is positive (or non-negative for all real values of $x$)
+3.  For all possible $j$ values of x,
+
+$$
+    \sum_j p_j = 1
+$$
+
+-   Discrete probability functions is more accurately described as a *probability mass function*.
+-   Examples include the *binomial* and *poisson* distributions
+
+:::  
+
+::::  
+
+## Continuous  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+1.  The probability of $x$ between two points is given by a function $f(x)$
+
+$$
+    p[a \le x \le b] = \int_a^b f(x) dx
+$$
+
+2.  $p[a \le x \le b]$ is positive (or non-negative for all real values of $x$)
+3.  The integral over all values is equal to 1
+
+
+$$
+    \int_{-\infty}^{\infty} f(x)dx = 1
+$$
+
+
+-   The probability at a single point is 0, so remember, continous distributions are measured over an interval (the area under the curve).
+
+<br>
+
+-   Continuous probability functions are more accurately described as *probability density functions*.
+-   We will focus on continuous distribution functions for this section
+
+:::  
+
+::::  
+
+# Distributions {.theme-section}  
+
+## Continuous Distributions
+
+-   Normal Distribution
+
+-   Uniform Distribution
+
+-   *t* Distribution
+
+-   F Distribution
+
+-   Chi-Square Distribution
+
+-   See the [NIST e-Handbook for a larger list](https://www.itl.nist.gov/div898/handbook/eda/section3/eda366.htm){target="”_blank”"}  
+
+
+
+## The Normal Distribution Created Using ggplot  
+
+Looks like?
+
+. . .
+
+```{r}
+tibble(x = c(-4, 4)) %>%
+         ggplot() +
+         stat_function(mapping = aes(x = x), 
+                       fun = dnorm,
+                       args = list(mean = 0, sd = 1),
+                       color = "blue") + 
+  labs(
+    title = "Standard Normal Distribution",
+    subtitle = "mean = 0, sd = 1 (standardized)",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+## The normal distribution with a non-zero mean and a sd $\ne 1$  
+
+```{r}
+tibble(x = c(0, 100)) %>%
+         ggplot() +
+         stat_function(mapping = aes(x = x), 
+                       fun = dnorm,
+                       args = list(mean = 50, sd = 15),
+                       color = "blue") + 
+  labs(
+    title = "Normal Distribution",
+    subtitle = "mean = 50, sd = 15",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+## Comments on the Normal Distribution  
+
+[NIST e-Handbook](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3661.htm) 
+
+:::: {.columns}  
+
+::: {.column width=60%}
+
+For both theoretical and practical reasons, the normal distribution is probably the most important distribution in statistics. For example,
+
+- Many classical statistical tests are based on the assumption that the data follow a normal distribution. This assumption should be tested before applying these tests.
+
+- In modeling applications, such as linear and non-linear regression, the error term is often assumed to follow a normal distribution with fixed location and scale.
+
+- The normal distribution is used to find significance levels in many hypothesis tests and confidence intervals. 
+
+:::  
+
+::::  
+
+## Uniform Distribution?
+
+## Unniform Distribution
+
+```{r}
+tibble(x = c(-4, 4)) %>%
+         ggplot() +
+         stat_function(mapping = aes(x = x), 
+                       fun = dunif,
+                       args = list(min = -4, max = 4),
+                       color = "blue") + 
+  labs(
+    title = "Uniform Distribution",
+    subtitle = "min = -4, max = 4",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+## Comments on the Uniform Distribution  
+
+[NIST e-Handbook](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3662.htm)  
+
+The uniform distribution defines equal probability over a given range for a continuous distribution. For this reason, it is important as a reference distribution.
+
+One of the most important applications of the uniform distribution is in the generation of random numbers. That is, almost all random number generators generate random numbers on the (0,1) interval. For other distributions, some transformation is applied to the uniform random numbers. 
+
+
+## t Distribution {.smaller}
+
+. . .
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+
+In theory, requires multiple parameters to define:  
+- **location** (mean)  
+- **scale** (standard deviation)  
+- **shape** (degrees of freedom, df)
+
+
+But, we will always refer back to a "standardized" distribution curve centered at zero.
+
+:::  
+
+::: {.column width=70%}  
+
+(Notice how quickly we approach a normal distribution.) . . .
+
+```{r}
+tibble(x = c(-4, 4)) %>%
+  ggplot() +
+  stat_function(mapping = aes(x = x), 
+                fun = dt,
+                args = list(df = 2), color = "blue") +
+  stat_function(mapping = aes(x = x), 
+                fun = dt,
+                args = list(df = 9), color = "green") +
+  stat_function(mapping = aes(x = x), 
+                fun = dt,
+                args = list(df = 29), color = "red") +
+  stat_function(mapping = aes(x = x), 
+                fun = dnorm,
+                args = list(mean = 0, sd = 1), color = "black") +
+  labs(
+    title = "t Distribution",
+    subtitle = "df = 2 (blue), df = 9 (green), df = 29 (red), normal (black)",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+:::  
+
+::::  
+
+## Comments on the t Distribution  
+
+[NIST e-Handbook](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3664.htm)  
+
+The t distribution is used in many cases for the critical regions for hypothesis tests and in determining confidence intervals. The most common example is testing if data are consistent with the assumed process mean. 
+
+## Chi-Squre Distribution  
+
+:::: {.columns}  
+
+::: {.column width=30%}
+
+Requires multiple parameters to define (location, scale, and shape), but is normally treated as a standardized distribution with location and scale omitted.
+
+:::  
+
+::: {.column width=70%}  
+
+```{r}
+tibble(x = c(0, 20)) %>%
+  ggplot() +
+  stat_function(mapping = aes(x = x), 
+                fun = dchisq,
+                args = list(df = 1), color = "blue") +
+  stat_function(mapping = aes(x = x), 
+                fun = dchisq,
+                args = list(df = 2), color = "green") +
+  stat_function(mapping = aes(x = x), 
+                fun = dchisq,
+                args = list(df = 5), color = "red") +
+  stat_function(mapping = aes(x = x), 
+                fun = dchisq,
+                args = list(df = 10), color = "black") +
+  labs(
+    title = "Chi-Square Distribution",
+    subtitle = "df = 1 (blue), df = 2 (green), df = 5 (red), df = 10 (black)",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+:::  
+
+::::  
+
+## Comments on the Chi-Square Distribution  
+
+[NIST e-Handbook](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3666.htm)  
+
+The chi-square distribution is used in many cases for the critical regions for hypothesis tests and in determining confidence intervals. 
+
+Two common examples are the chi-square test for independence in an RxC contingency table and the chi-square test to determine if the standard deviation of a population is equal to a pre-specified value. 
+
+## F Distribution {.smaller}  
+
+:::: {.columns}  
+
+::: {.column width=30%}
+
+> The F distribution is the ratio of two chi-square distributions with degrees of freedom ν1 and ν2, respectively, where each chi-square has first been divided by its degrees of freedom.
+
+My most common use of the F distribution is to calculate an upper control limit (UCL) for standard deviation run charts.
+
+:::  
+
+
+::: {.column width=70%}  
+
+
+```{r}
+tibble(x = c(0, 5)) %>%
+  ggplot() +
+  stat_function(mapping = aes(x = x), 
+                fun = df,
+                args = list(df1 = 1, df2 = 1), color = "blue") +
+  stat_function(mapping = aes(x = x), 
+                fun = df,
+                args = list(df1 = 1, df2 = 10), color = "green") +
+  stat_function(mapping = aes(x = x), 
+                fun = df,
+                args = list(df1 = 10, df2 = 1), color = "red") +
+  stat_function(mapping = aes(x = x), 
+                fun = df,
+                args = list(df1 = 10, df2 = 10), color = "black") +
+  labs(
+    title = "F Distribution",
+    subtitle = "df1 = 1, df2 = 1 (blue), df1 = 1, df2 = 10 (green), df1 = 10, df2 = 10 (red), df1 = 10, df2 = 10 (black)",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+:::  
+
+::::  
+
+## Comments on the F Distribution  
+
+[NIST e-Handbook](https://www.itl.nist.gov/div898/handbook/eda/section3/eda3665.htm)  
+
+The F distribution is used in many cases for the critical regions for hypothesis tests and in determining confidence intervals.  
+
+Two common examples are the analysis of variance and the F test to determine if the variances of two populations are equal. 
+
+
+## So what's the point?
+
+Don't get boxed into assuming there is only the normal probability distribution. Be aware that there are other distributions.
+
+::: {.fragment}
+Although we will use (and abuse) the normal probability distribution.
+:::
+
+# Using Distributions {.theme-section}  
+
+## Example 1: dairy cows (normal distribution) {.smaller}
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+```{r}
+#| echo: false
+#| out-height: 300px
+#| out-width: 600px
+#| fig-asp: 0.5
+#| fig-width: 6
+#| code-line-numbers: "|3:6|7:12|"
+
+tibble(x = c(0, 25)) |> 
+  ggplot() +
+  stat_function(mapping = aes(x = x), 
+                fun = dnorm,
+                args = list(mean = 12.5, sd = 4.3),
+                color = "blue") + 
+  stat_function(mapping = aes(x = x),
+                fun = dnorm,
+                args = list(mean = 12.5, sd = 4.3), 
+                xlim = c(12.5 - 1.96*(4.3), 12.5 + 1.96*(4.3)),
+                geom = "area",
+                fill = "#000099", alpha = 0.2) +
+  labs(
+    title = "Milk production with 95% of population shaded \nassuming a normal distribution",
+    subtitle = "mean = 12.5, sd = 4.3, z(crtical) =  ±1.96",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+:::  
+
+::: {.column width=40%}  
+
+[Adapted from PSU Stats](https://online.stat.psu.edu/stat200/lesson/2/2.2/2.2.8)
+
+A study of 66,831 dairy cows found the mean milk yield was 12.5 kg per milking with a standard deviation of 4.3 kg per milking.
+
+**What range represents the 95% of the population?**
+
+::: {.fragment}  
+
+```{r}
+#| echo: true
+
+# choose a level of alpha; 0.05 (need to divide by two for "two-tails")
+qnorm(0.05/2)
+qnorm(0.05/2, lower.tail = FALSE)
+```
+
+```{r}
+#| echo: true
+
+12.5 - 1.96*4.3
+12.5 + 1.96*4.3
+```
+
+:::  
+
+:::  
+
+::::  
+
+
+## How did we create the graphic with `stat_fucntion()` {.smaller}
+
+```{r}
+#| echo: true
+#| out-height: 450px
+#| out-width: 900px
+#| fig-asp: 0.5
+#| fig-width: 6
+#| code-line-numbers: "|1|3-6|7-12|"
+
+tibble(x = c(0, 25)) |> 
+  ggplot() +
+  stat_function(mapping = aes(x = x), 
+                fun = dnorm,
+                args = list(mean = 12.5, sd = 4.3),
+                color = "blue") + 
+  stat_function(mapping = aes(x = x),
+                fun = dnorm,
+                args = list(mean = 12.5, sd = 4.3), 
+                xlim = c(12.5 - 1.96*(4.3), 12.5 + 1.96*(4.3)),
+                geom = "area",
+                fill = "#000099", alpha = 0.2) +
+  labs(
+    title = "Milk production with 95% of population shaded \nassuming a normal distribution",
+    subtitle = "mean = 12.5, sd = 4.3, z(crtical) =  ±1.96",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+## Example 2: t distribution for smaller sample size {.smaller}
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+
+Instead of 66,831 dairy cows, we only had 6, but had the same descriptive statistics.  
+
+What would our probability distribution and 95% probability of data look like?
+
+::: {.fragment fragement-index=2}  
+
+```{r}
+#| echo: true
+
+qt(0.05/2, df = 5)
+qt(0.05/2, df = 5, lower.tail = FALSE)
+```
+
+```{r}
+#| echo: true
+
+12.5 - 2.57*4.3
+12.5 + 2.57*4.3
+```
+
+:::  
+
+
+:::  
+
+::: {.column width=70%}  
+
+::: {.fragment fragment-index=1}  
+
+```{r}
+#| code-fold: true  
+
+tibble(x = c(-3, 3)) |> 
+  ggplot() +
+  stat_function(mapping = aes(x = x),
+                fun = dnorm,
+                color = "black") +
+  stat_function(mapping = aes(x = x), 
+                fun = dt,
+                args = list(df = 5),
+                color = "blue") + 
+  stat_function(mapping = aes(x = x),
+                fun = dt,
+                args = list(df = 5), 
+                xlim = c(-2.57, 2.57),
+                geom = "area",
+                fill = "#000099", alpha = 0.2) +
+  labs(
+    title = "Milk production with 95% of population shaded \nfor 6 cows with t distribution",
+    subtitle = "t distribution, t(crtical) =  ±2.57 \nblack curve: normal distribution",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+```
+
+:::  
+
+:::  
+
+::::  
+
+## Assignment
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+* Create plots for normal, t, and F distributions using ggplot's `stat_function()` layer. 
+
+* Provide a brief description of each distribution and an example of how it is used. **Include descriptive titles, sub-titles, axis labels**
+
+* For each distribution, provide the critical value(s) used to estimate 95% probability. (Only one example is needed if multiple distributions are possible.) Describe if you are using a "one-tailed" or "two-tailed" value.
+
+:::  
+
+::::  
+
+
+# Accuracy, Bias, and Precision {.theme-section}  
+
+## Accuracy and Bias  
+
+:::: {.columns}  
+
+::: {.column width=50%}
+
+### Accuracy  
+Accuracy is a qualitative term referring to whether there is agreement between a measurement made on an object and its true (target or reference) value. 
+
+:::  
+
+::: {.column width=50%}  
+### Bias  
+Bias is a quantitative term describing the difference between the average of measurements made on the same object and its true value. In particular, for a measurement laboratory, bias is the difference (generally unknown) between a laboratory's average value (over time) for a test item and the average that would be achieved by the reference laboratory if it undertook the same measurements on the same test item.
+
+:::  
+
+::::  
+
+## Accuracy and Bias 
+
+```{=html}
+<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; height: 500px;">
+  <div style="text-align: center; margin: 20px;">
+    <svg width="250" height="250" viewBox="0 0 250 250">
+      <circle cx="125" cy="125" r="120" fill="#f0f0f0" stroke="#333" stroke-width="2"/>
+      <circle cx="125" cy="125" r="80" fill="#d0d0d0" stroke="#333" stroke-width="2"/>
+      <circle cx="125" cy="125" r="40" fill="#a0a0a0" stroke="#333" stroke-width="2"/>
+      <circle cx="125" cy="125" r="3" fill="black"/>
+      <circle cx="130" cy="120" r="5" fill="blue"/>
+      <circle cx="135" cy="130" r="5" fill="blue"/>
+      <circle cx="120" cy="135" r="5" fill="blue"/>
+      <circle cx="115" cy="115" r="5" fill="blue"/>
+      <text x="125" y="240" text-anchor="middle" font-size="16">Accuracy</text>
+    </svg>
+  </div>
+  <div style="text-align: center; margin: 20px;">
+    <svg width="250" height="250" viewBox="0 0 250 250">
+      <line x1="25" y1="225" x2="225" y2="225" stroke="black" stroke-width="2"/>
+      <line x1="125" y1="25" x2="125" y2="225" stroke="black" stroke-width="2"/>
+      <circle cx="125" cy="125" r="3" fill="black"/>
+      <text x="125" y="245" text-anchor="middle" font-size="16">True Value</text>
+      <circle cx="175" cy="125" r="30" fill="rgba(255,0,0,0.2)" stroke="red" stroke-width="2"/>
+      <circle cx="180" cy="120" r="3" fill="red"/>
+      <circle cx="170" cy="130" r="3" fill="red"/>
+      <circle cx="175" cy="125" r="3" fill="red"/>
+      <circle cx="173" cy="118" r="3" fill="red"/>
+      <text x="175" y="170" text-anchor="middle" font-size="16" fill="red">Biased</text>
+      <text x="175" y="190" text-anchor="middle" font-size="16" fill="red">Measurements</text>
+    </svg>
+  </div>
+</div>
+```
+
+## Accuracy and Precision {.smaller}  
+
+```{=html}
+<!-- Insert the HTML code here -->
+
+<div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; width: 100%; height: 400px;">
+  <div style="text-align: center; margin: 10px;">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="#f0f0f0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="60" fill="#d0d0d0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="30" fill="#a0a0a0" stroke="#333" stroke-width="2"/>
+      <circle cx="140" cy="60" r="5" fill="red"/>
+      <circle cx="160" cy="110" r="5" fill="red"/>
+      <circle cx="130" cy="150" r="5" fill="red"/>
+      <circle cx="110" cy="40" r="5" fill="red"/>
+    </svg>
+    <p>Low Accuracy<br>Low Precision</p>
+  </div>
+  <div style="text-align: center; margin: 10px;">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="#f0f0f0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="60" fill="#d0d0d0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="30" fill="#a0a0a0" stroke="#333" stroke-width="2"/>
+      <circle cx="150" cy="100" r="5" fill="red"/>
+      <circle cx="152" cy="98" r="5" fill="red"/>
+      <circle cx="148" cy="102" r="5" fill="red"/>
+      <circle cx="151" cy="101" r="5" fill="red"/>
+    </svg>
+    <p>Low Accuracy<br>High Precision</p>
+  </div>
+  <div style="text-align: center; margin: 10px;">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="#f0f0f0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="60" fill="#d0d0d0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="30" fill="#a0a0a0" stroke="#333" stroke-width="2"/>
+      <circle cx="110" cy="90" r="5" fill="red"/>
+      <circle cx="90" cy="120" r="5" fill="red"/>
+      <circle cx="105" cy="85" r="5" fill="red"/>
+      <circle cx="95" cy="110" r="5" fill="red"/>
+    </svg>
+    <p>High Accuracy<br>Low Precision</p>
+  </div>
+  <div style="text-align: center; margin: 10px;">
+    <svg width="200" height="200" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="#f0f0f0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="60" fill="#d0d0d0" stroke="#333" stroke-width="2"/>
+      <circle cx="100" cy="100" r="30" fill="#a0a0a0" stroke="#333" stroke-width="2"/>
+      <circle cx="102" cy="98" r="5" fill="red"/>
+      <circle cx="98" cy="102" r="5" fill="red"/>
+      <circle cx="100" cy="100" r="5" fill="red"/>
+      <circle cx="101" cy="99" r="5" fill="red"/>
+    </svg>
+    <p>High Accuracy<br>High Precision</p>
+  </div>
+</div>
+``` 
+
+# Variability {.theme-section}  
+
+## Variability, A Visual Comparison
+
+What would this look like?
+
+. . .
+
+```{r}
+set.seed(2020)
+
+label_string <- as_labeller(c(process_1 = "Process 1", process_2 = "Process 2"))
+
+my_dnorm_function <- function(x) {
+  dnorm(seq(40, 160, 1), mean = x, sd = 10)
+}
+
+process_simulation <-  tibble(
+  day = rep(1:10),
+  process_1 = rnorm(10, mean = 100, sd = 2),
+  process_2 = rnorm(10, mean = 120, sd = 15)
+) |> 
+  pivot_longer(2:3, names_to = "mean_process", values_to = "mean_values") |> 
+  mutate(simulated_distribution = map(mean_values, my_dnorm_function)) |> 
+  unnest(cols = c(simulated_distribution)) |> 
+  mutate(x_values = rep(seq(40, 160, 1), times = 20))
+
+process_simulation |> 
+  ggplot(aes(x = x_values, y = day, height = simulated_distribution*100, fill = as.factor(day))) +
+  facet_wrap(vars(mean_process), labeller = label_string) +
+  geom_ridgeline(alpha = 0.8) +
+  geom_vline(xintercept = 100, color = "black") +
+  geom_vline(xintercept = c(70, 130), color = "red", linetype = "dashed") +
+  labs(
+    x = "Process Value",
+    y = "Distributions Over Time",
+    fill = "Day",
+    title = "Distributions of short-term measurements over 10 days",
+    subtitle = "Distances from the centerline illustrate between-day variability"
+  ) +
+  guides(guides(fill = guide_legend(reverse = TRUE))) +
+  scale_fill_brewer(palette = "Spectral") +
+  theme_classic() +
+  theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+```
+
+## Terminology (NIST e-Handbook)  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### Common terms <br>to descrie short-term variability 
+
+1. precision  
+2. repeatability  
+3. within-time variability  
+4. short-term variability
+
+:::  
+
+::: {.column width=50%}  
+
+### Common terms to <br>describe long-term variability  
+
+1. day-to-day variability  
+2. long-term variability  
+3. reproducibility  
+
+:::  
+
+::::  
+
+## Recommendation: Adopt precise definitions  
+
+and, provide Best Known Methods (BKMs) or Standard Operating Procedures (SOPs) to ensure consistent implementation. 
+
+As an example, the NIST e-Handbook provides a [detailed description of the terms](https://www.itl.nist.gov/div898/handbook/mpc/section1/mpc114.htm)
+
+* Level-1 standard deviation for short-term variability
+* Level-2 standard deviation for day-to-day variability
+* Level-3 standard deviation for long-term variability 
+
+
+## Short-term Variability: Precision  
+
+:::: {.columns}  
+
+::: {.column width=70%}
+
+For $j$ measurements over $k$ days, the NIST e-Handbook defines the short-term variability as the standard deviation of the measurements:
+
+$$
+{\large s}_k = \sqrt{\frac{1}{J-1} \sum_{j=1}^{J} ( Y_{kj} - \overline{Y}_{k \, \small{\bullet}} ) ^2}
+$$
+
+
+where:
+
+$$
+\overline{Y}_{k \, \small{\bullet}} = \frac{1}{J}\sum_{j=1}^{J} Y_{kj}
+$$ 
+is the mean of the $k$th day, and $Y_{kj}(k=1, \,\ldots, \, K, \,\, j=1, \,\ldots, \, J)$ are the individual measurements.
+
+:::  
+
+::::  
+
+## Short-term Variability: Precision  
+
+### Data  
+
+```{r}
+#| code-fold: true
+
+set.seed(42)
+
+data_kj <- tibble(day_k = rep(1:5, each = 30),
+              measurement_j = rnorm(150, mean = 100, sd = 3))
+data_kj
+```
+
+### Calculation  
+
+```{r}
+#| code-fold: show 
+
+level_1_kj = data_kj |> 
+  group_by(day_k) |> 
+  summarise(mean_k = mean(measurement_j), 
+            sd_k = sd(measurement_j))
+
+level_1_kj
+```
+## Simple Error Plot
+
+```{r}
+#| code-fold: true
+
+level_1_kj |> 
+  ggplot(aes(x = day_k, y = mean_k, ymin = mean_k - 2*sd_k, ymax = mean_k + 2*sd_k)) +
+  geom_point() +
+  geom_errorbar(width = 0.2) +
+  labs(
+    x = "Day",
+    y = "Mean Measurement",
+    title = "Short-term Variability: Precision",
+    subtitle = "Error bars represent \U00B1two standard deviations",
+#    subtitle = TeX(r"(\textrm{Error bars represent }$\pm$\textrm{two standard deviations})"),
+    caption = "Data generated using rnorm(150, mean = 100, sd = 3)"
+  ) +
+  theme_classic()
+```
+## Dataset 2
+
+```{r}
+#| code-fold: true
+
+set.seed(42)
+
+data_2_kj <- tibble(day_k = rep(1:30, each = 30),
+              measurement_j = rnorm(900, mean = 100, sd = 3))
+data_2_kj
+```
+
+### Grouping and Calculation  
+
+```{r}
+#| code-fold: show 
+
+level_1_2_kj = data_2_kj |> 
+  group_by(day_k) |> 
+  summarise(mean_k = mean(measurement_j), 
+            sd_k = sd(measurement_j))
+
+level_1_2_kj
+``` 
+
+## Simple Error Plot of Dataset 2 
+
+```{r}
+#| code-fold: true
+
+level_1_2_kj |> 
+  ggplot(aes(x = day_k, y = mean_k, ymin = mean_k - 2*sd_k, ymax = mean_k + 2*sd_k)) +
+  geom_point() +
+  geom_errorbar(width = 0.2) +
+  geom_hline(yintercept = c(94, 106), color = "red", linetype = "dashed") +
+  labs(
+    x = "Day",
+    y = "Mean Measurement",
+    title = "Short-term Variability: Precision",
+    subtitle = "Error bars represent \U00B1two standard deviations",
+#    subtitle = TeX(r"(\textrm{Error bars represent }$\pm$\textrm{two standard deviations})"),
+    caption = "Data generated using rnorm(900, mean = 100, sd = 3)"
+  ) +
+  theme_classic()
+```
+
+
+## Day-to-Day Variability: Repeatability  
+
+Level-2 Standard Deviation
+
+$$
+{\large s}_2 = \sqrt{\frac{1}{K-1} \sum_{k=1}^{K} \left( \overline{Y}_{k \, \small{\bullet}} - \overline{Y}_{\small{\bullet}  \small{\bullet}} \right) ^2}
+$$
+
+where:
+
+$$
+\overline{Y}_{\small{\bullet} \small{\bullet}}  = \frac{1}{K} \sum_{k=1}^{K} \overline{Y}_{k \, \small{\bullet}}
+$$
+
+is the grand mean of all measurements, and $\overline{Y}_{k \, \small{\bullet}}$ is the mean of the $k$th day.
+
+## Day-to-Day Variability 
+
+Let's assume our day-to-day variability follows a random walk; starting with our target value of 100, and each day we add a random value from a normal distribution with a mean of 100 and a standard deviation of 3. 
+
+```{r}
+#| code-fold: true
+
+set.seed(42)
+
+day_to_day <- tibble(day = 1:14, 
+                     measurement = cumsum(rnorm(14, mean = 0, sd = 1)) + 100)
+day_to_day
+```
+
+
+## Plot of the Day-to-Day Variability  
+
+### Include the precision of plus minus two standard deviations 
+
+```{r}
+#| code-fold: true
+
+day_to_day |> 
+  ggplot(aes(x = day, y = measurement)) +
+  geom_line() +
+  geom_point() +
+  geom_errorbar(aes(ymin = measurement - 6, ymax = measurement + 6), width = 0.2) +
+  geom_hline(yintercept = c(94, 106), color = "red", linetype = "dashed") +
+  labs(
+    x = "Day",
+    y = "Measurement",
+    title = "Day-to-Day Variability: Repeatability",
+    caption = "Data generated using cumsum(rnorm(30, mean = 0, sd = 1))"
+  ) +
+  theme_classic()
+
+```
+
+## Day-to-Day Variability: Calculation
+
+```{r}
+#| code-fold: show
+
+day_to_day |> 
+  summarise(sd_measurement = sd(measurement))
+```
+
+## Random walk over 1000 days!
+
+```{r}
+#| code-fold: true
+
+set.seed(42)
+
+day_to_day_1000 <- tibble(day = 1:365, 
+                     measurement = cumsum(rnorm(365, mean = 0, sd = 1)) + 100)
+day_to_day_1000
+```
+
+## Long-term Variability: Reproducibility  
+
+### Level-3 Standard Deviation  
+
+$$
+{\large s}_{3} = \sqrt{\frac{1}{L-1} \sum_{l=1}^{L}{\left( Y_{l{\small \, \bullet \bullet}} - \overline{Y}_{{\small \bullet \bullet \bullet}} \right)^2}}
+$$
+where
+
+$$
+\overline{Y}_{{\small \bullet \bullet \bullet}} = \frac{1}{L}\sum_{l=1}^{L}{\overline{Y}_{l {\small \, \bullet \bullet}}}
+$$
+
+
+## Plot of the Day-to-Day Variability over 365 days
+
+```{r}
+#| code-fold: true
+
+day_to_day_1000 |> 
+  ggplot(aes(x = day, y = measurement)) +
+  geom_line() +
+  geom_errorbar(aes(ymin = measurement - 6, ymax = measurement + 6), width = 0.0) +
+  geom_hline(yintercept = c(94, 106), color = "red", linetype = "dashed") +
+  labs(
+    x = "Day",
+    y = "Measurement",
+    title = "Day-to-Day Variability: Random Walk over 365 \"days\"",
+    caption = "Data generated using cumsum(rnorm(365, mean = 0, sd = 1))"
+  ) +
+  theme_classic()
+
+```
+
+## Plot of the Day-to-Day Variability over 90 days
+
+```{r}
+#| code-fold: true
+
+day_to_day_1000 |> 
+  filter(day <= 90) |>
+  ggplot(aes(x = day, y = measurement)) +
+  geom_line() +
+  geom_errorbar(aes(ymin = measurement - 6, ymax = measurement + 6), width = 0.0) +
+  geom_hline(yintercept = c(94, 106), color = "red", linetype = "dashed") +
+  labs(
+    x = "Day",
+    y = "Measurement",
+    title = "Day-to-Day Variability: Random Walk over 90 \"days\"",
+    caption = "Data generated using cumsum(rnorm(365, mean = 0, sd = 1))"
+  ) +
+  theme_classic()
+
+```
+
+## Plot of the Day-to-Day Variability over 3 runs during 90 days
+
+```{r}
+#| code-fold: true
+
+days_to_keep <- c(1:7, 31:37, 61:67)
+
+day_to_day_1000 |> 
+  filter(day %in% days_to_keep) |>
+  ggplot(aes(x = day, y = measurement)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = measurement - 6, ymax = measurement + 6), width = 0.0) +
+  geom_hline(yintercept = c(94, 106), color = "red", linetype = "dashed") +
+  labs(
+    x = "Day",
+    y = "Measurement",
+    title = "Day-to-Day Variability: Random Walk over 90 \"days\"",
+    caption = "Data generated using cumsum(rnorm(365, mean = 0, sd = 1))"
+  ) +
+  theme_classic()
+
+```
+
+## Level-3 Standard Deviation Calculation
+
+```{r}
+#| code-fold: show  
+#| code-line-numbers: "|1|3-4|5-9|10-12|"
+
+days_to_keep <- c(1:7, 31:37, 61:67)
+
+day_to_day_1000 |> 
+  filter(day %in% days_to_keep) |>
+  mutate(run_id = case_when(
+    day <= 7 ~ "Run 1",
+    day > 30 & day <= 37 ~ "Run 2",
+    TRUE ~ "Run 3")
+  ) |> 
+  group_by(run_id) |>
+  summarise(mean_measurement = mean(measurement)) |> 
+  summarise(count = n(), sd_measurement = sd(mean_measurement))
+```
+
+# Comparisons {.theme-section}  
+
+## Methods for Comparisons 
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### Statistical Tests (Hypothesis Testing)    
+
+- Provide a methodology for making quantitative decisions about a process or processes  
+- Rigorous theory  
+- Assumptions must be met  
+- Significance levels are often confused for practical significance 
+
+:::  
+
+::: {.column width=50%}  
+
+
+
+### Confidence Intervals 
+
+- Provide a range of values that are likely to contain the true value  
+- The confidence level is set as $1 - \alpha$  
+- Assumptions must be met  
+- Care needed to ensure the propper test is used. 
+
+:::  
+
+::::  
+
+## Statistical Test (Hypothesis Testing)  
+
+:::: {.columns}  
+
+::: {.column width=70%}  
+
+$$
+\begin{aligned}
+H_0 & : \textrm{a null hypothesis} \\
+H_a & : \textrm{an alternative hypothesis}  
+\end{aligned}
+$$
+
+- The null hypothesis is constructed to be the default position that there is no effect or no difference.  
+- The alternative hypothesis is the position that there is an effect or a difference.  
+<br>
+
+We do not prove the alternative hypothesis, we only reject or fail to reject the null hypothesis.  
+
+:::  
+
+::::  
+
+## Steps in Statistical Testing 
+
+::: {.incremental}  
+
+1. Formulate the hypothesis:
+   - State the null hypothesis ($H_0$)
+   - State the alternative hypothesis ($H_a$)
+
+2. Choose the significance level ($\alpha$):
+   - The commonly used level is 0.05
+
+3. Select the appropriate statistical test:
+   - Based on the type of data and research question
+
+4. Collect and prepare the data:
+   - Ensure data meets the assumptions of the chosen test
+
+5. Calculate the test statistic:
+   - Use the formula specific to the chosen test
+
+6. Determine the critical value or p-value:
+   - Use statistical tables or software
+
+7. Compare the test statistic to the critical value, or the p-value to α:
+   - If test statistic > critical value, or p-value < α, reject $H_0$
+   - If test statistic ≤ critical value, or p-value ≥ α, fail to reject $H_0$
+
+8. Interpret the results:
+   - Draw conclusions based on whether H₀ was rejected or not
+   - Consider practical significance alongside statistical significance
+
+9. Report the findings:
+   - Include test statistic, degrees of freedom, p-value, and effect size
+
+:::  
+
+
+## Statistical Test: Example 1 (1/3)
+
+### Are the data consistent with the assumed process mean? ([7.2.2](https://www.itl.nist.gov/div898/handbook/prc/section2/prc22.htm))
+
+>The following numbers are particle (contamination) counts for a sample of 10 semiconductor silicon wafers:
+
+>50  48  44  56  61  52  53  55  67  51
+
+>The mean = 53.7 counts and the standard deviation = 6.567 counts.  
+
+>Over a long run the process average for wafer particle counts has been 50 counts per wafer, and on the basis of the sample, we want to test whether a change has occurred. 
+
+What is the null hypothesis and alternative hypothesis?  
+
+Is this a one-sided or two-sided test?  
+
+What test would you use?  
+
+## Statistical Test: Example 1 (2/3)  
+
+:::: {.columns}
+
+::: {.column width=50%}
+
+### For comparing means, we use the t-test  
+
+1. Calculate the t-statistic from the data  
+2. Compare to the t-critical value from the t-distribution table  
+
+:::  
+
+::: {.column width=50%}
+
+::: {.fragment .transparent}  
+
+$$
+t = \frac{\overline{Y} - \mu_0}{s/\sqrt{n}}
+$$
+:::  
+
+:::  
+
+::::  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+::: {.fragment}  
+### Cacluate the t-statistic  
+
+```{r}  
+#| code-fold: show 
+
+t_test <- (53.7 - 50)/(6.567/sqrt(10))
+t_test
+```
+
+:::  
+
+:::  
+
+::: {.column width=50%}  
+
+::: {.fragment}  
+
+### Compare to the t-critical value  
+
+```{r}
+#| code-fold: show
+
+alpha_test = 0.05
+n_wafers = 10
+
+t_crit = qt(1 - alpha_test/2, df = n_wafers - 1)
+t_crit  
+```
+
+Since $t_{test} \le t_{critical}$, we fail to reject the null hypothesis.
+
+(For two sided test, I work with absolute values of the t-statistic.)
+
+:::  
+
+:::  
+
+::::  
+
+## Statistical Test: Example 1 (3/3)  
+
+### View the t-distribution and the critical values  
+
+```{r}
+#| code-fold: true
+
+tibble(x = c(-3, 3)) |> 
+  ggplot() +
+  stat_function(mapping = aes(x = x),
+                fun = dt,
+                args = list(df = 9),
+                color = "blue") + 
+  stat_function(mapping = aes(x = x),
+                fun = dt,
+                args = list(df = 9), 
+                xlim = c(-2.262, 2.262),
+                geom = "area",
+                fill = "#000099", alpha = 0.2) +
+  geom_vline(xintercept = t_test, color = "black") +
+  annotate("label", x = t_test, y = 0.3, label = paste0("t-test \ncalculated value\n", round(t_test, 3)), color = "black") +
+  labs(
+    title = "t-distribution with 95% of population shaded",
+    subtitle = "t distribution, t(crtical) =  ±2.262",
+    y = "Probability Density"
+  ) +
+  theme_classic()
+
+```
+
+## Statistical Test: Example 2 
+
+### Do two processes have the same mean? ([7.3.1](https://www.itl.nist.gov/div898/handbook/prc/section3/prc31.htm))
+
+Setup the null and alternative hypothesis. 
+
+$$
+\begin{aligned}
+H_0 & : \mu_1 = \mu_2 \\
+H_a & : \mu_1 \neq \mu_2
+\end{aligned}
+$$
+
+For a one-sided test
+
+$$
+\begin{aligned}
+H_0 & : \mu_1 \le \mu_2  \\
+H_a & : \mu_1 > \mu_2 \\
+\textrm{or} \\
+H_0 & : \mu_1 \ge \mu_2 \\
+H_a & : \mu_1 < \mu_2
+\end{aligned}
+$$
+
+## What dow we know?  
+
+### Means 
+
+$$
+\overline{Y1} = \frac{1}{n_1} \sum_{i=1}^{n_1} Y1_i \, , \,\,\,\,\, 
+   \overline{Y2} = \frac{1}{n_2} \sum_{i=1}^{n_2} Y2_i
+$$
+
+### Standard Deviations  
+
+$$
+s_1 = \sqrt{\frac{1}{n_1-1} \sum_{i=1}^{n_1} (Y1_i - \overline{Y1})^2} \, , \,\,\,\,\,
+s_2 = \sqrt{\frac{1}{n_2-1} \sum_{i=1}^{n_2} (Y2_i - \overline{Y2})^2}
+$$
+
+The type of t-test used will depend on whether the variances are equal or not. 
+
+## t-test for Equal and Unequal Variances 
+
+### Equal Variances
+
+$$
+t = \frac{\overline{Y1} - \overline{Y2}}{s_p \sqrt{\frac{1}{n_1} + \frac{1}{n_2}}}
+$$
+
+where
+
+$$
+s_p = \sqrt{\frac{(n_1 - 1)s_1^2 + (n_2 - 1)s_2^2}{n_1 + n_2 - 2}}
+$$
+
+
+### Unequal Variances  
+
+$$
+t = \frac{\overline{Y1} - \overline{Y2}}{\sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}}
+$$
+
+In this case, the degrees of freedom are not known exactly but can be estimated using the Welch-Satterthwaite equation.
+
+$$
+\nu = \frac{\left( \frac{s_1^2}{N_1} + \frac{s_2^2}{N_2} \right)^2}
+              {\frac{s_1^4}{N_1^2(N_1-1)} + \frac{s_2^4}{N_2^2(N_2-1)}}
+$$
+
+## We're going to use the   
+
+::: {.r-fit-text}
+`t.test()` 
+:::  
+
+function from the *stats* package in R.  
+
+?t.test 
+
+## From the help file  
+
+### Usage
+
+```r
+t.test(x, ...)
+
+## Default S3 method:
+t.test(x, y = NULL,
+       alternative = c("two.sided", "less", "greater"),
+       mu = 0, paired = FALSE, var.equal = FALSE,
+       conf.level = 0.95, ...)
+```
+
+## Statistical Test: Example 2 (1/5)
+
+### Data [(7.3.1)](https://www.itl.nist.gov/div898/handbook/prc/section3/prc31.htm)  
+
+>A new procedure (process 2) to assemble a device is introduced and tested for possible improvement in time of assembly. The question being addressed is whether the mean, , of the new assembly process is smaller than the mean, , for the old assembly process (process 1). 
+
+
+| Device | Process 1 (Old) | Process 2 (New) |
+|--------|-----------------|-----------------|
+| 1      | 32              | 36              |
+| 2      | 37              | 31              |
+| 3      | 35              | 30              |
+| 4      | 28              | 31              |
+| 5      | 41              | 34              |
+| 6      | 44              | 36              |
+| 7      | 35              | 29              |
+| 8      | 31              | 32              |
+| 9      | 34              | 31              |
+| 10     | 38              |                 |
+| 11     | 42              |                 |
+
+
+### Data Frame  
+
+```{r}
+#| code-fold: true
+
+process_df <- tibble(
+  Device = 1:11,
+  Process_1_Old = c(32, 37, 35, 28, 41, 44, 35, 31, 34, 38, 42),
+  Process_2_New = c(36, 31, 30, 31, 34, 36, 29, 32, 31, NA, NA)
+)
+
+process_df
+```
+
+## Statistical Test: Example 2 (2/5)  
+
+### Assume equal variance 
+
+```{r}
+#| code-fold: show 
+
+t.test(process_df$Process_2_New, process_df$Process_1_Old, 
+       var.equal = TRUE,
+       altenrative = "less")
+```
+
+## Statistical Test: Example 2 (3/5) 
+
+### Summary statistics 
+
+```{r}
+#| code-fold: show
+
+# Using C-style String Formatting Commands (see ?sprintf)
+
+# "Process 1 (Old)"
+sprintf("Process 1 (Old) Mean: %.2f", mean(process_df$Process_1_Old, na.rm = TRUE))
+sprintf("Process 1 (Old) Standard Deviation: %.2f", sd(process_df$Process_1_Old, na.rm = TRUE))
+
+# "Process 2 (New)")
+sprintf("Process 2 (New) Mean: %.2f", mean(process_df$Process_2_New, na.rm = TRUE))
+sprintf("Process 2 (New) Standard Deviation: %.2f", sd(process_df$Process_2_New, na.rm = TRUE))
+```
+
+<br> 
+
+### My preferred way 
+
+```{r}
+#| code-fold: show
+
+process_summary_df <- process_df |>
+  pivot_longer(cols = c(Process_1_Old, Process_2_New), 
+               names_to = "Process", values_to = "Time") |>
+  group_by(Process) |>
+  summarise(
+    mean = mean(Time, na.rm = TRUE), 
+    sd = sd(Time, na.rm = TRUE)) |> 
+  ungroup()
+
+process_summary_df
+```
+
+### Was our assumption of equal variance correct?  
+
+## Do two processess have the same standard deviation? [(7.3.2)](https://www.itl.nist.gov/div898/handbook/prc/section3/prc32.htm)
+
+### State the null and alternative hypothesis 
+
+$$
+\begin{aligned}
+H_0 & : \sigma_1 = \sigma_2 \\
+H_a & : \sigma_1 \neq \sigma_2
+\end{aligned}
+$$
+
+or for a one side test 
+
+$$
+\begin{aligned}
+H_0 & : \sigma_1 \le \sigma_2 \\
+H_a & : \sigma_1 > \sigma_2
+\end{aligned}
+$$ 
+
+For our case, we can state the null hypothesis as
+
+$$
+H_0 : \sigma_{new} \ge \sigma_{old} \\
+H_a : \sigma_{new} < \sigma_{old}
+$$
+
+## Statistical Test: Example 2 (4/5) 
+
+### The F-test for equality of variances 
+
+```{r}
+#| code-fold: show
+
+var.test(process_df$Process_2_New, process_df$Process_1_Old,
+         alternative = "less",
+         conf.level = 0.95)
+```
+
+## Statistical Test: Example 2 (5/5) 
+
+### Rerun the t.test with the assumption of unequal variances 
+
+```{r}
+#| code-fold: show
+
+t.test(process_df$Process_2_New, process_df$Process_1_Old, 
+       var.equal = FALSE,
+       altenrative = "less")
+```
+
+## Statistical Test: Example 3 (1/8)
+
+## Comparisons based on data from more that two processes: Are the means equal? [(7.4.3)](https://www.itl.nist.gov/div898/handbook/prc/section4/prc43.htm)
+
+### Introduction to ANOVA 
+
+>. . . study the effect of temperature on a passive component such as a resistor. We select three different temperatures and observe their effect on the resistors. This experiment can be conducted by measuring all the participating resistors before placing resistors each in three different ovens. 
+
+>Each oven is heated to a selected temperature. Then we measure the resistors again after, say, 24 hours and analyze the responses, which are the differences between before and after being subjected to the temperatures. 
+
+>The temperature is called a factor. The different temperature settings are called levels. In this example there are three levels or settings of the factor Temperature. 
+
+## Statistical Test: Example 3 (2/8)  
+
+## What is a factor?  
+
+>A factor is an independent treatment variable whose settings (values) are controlled and varied by the experimenter. The intensity setting of a factor is the level.
+
+> Levels may be quantitative numbers or, in many cases, simply "present" or "not present" ("0" or "1").
+
+
+In this experiment, there is only one factor, temperature, and the analysis is called a one-way or one-factor ANOVA.
+
+## Statistical Test: Example 3 (3/8)  
+
+### Hypotheses that can be tested in an ANOVA 
+
+For the one-way ANOVA, the null hypothesis is that all the population means are equal; the alternative hypothesis is that at least one population mean is different from the others. 
+
+$$
+\begin{aligned}
+H_0 & : \mu_1 = \mu_2 = \ldots = \mu_k \\
+H_a & : \textrm{at least one } \mu_i \textrm{ is different}
+\end{aligned}
+$$
+
+where $k$ is the number of levels of the factor.
+
+
+## Statistical Test: Example 3 (4/8) 
+
+### One-way ANOVA decomposition of the total sums of squares 
+
+$$
+\begin{array}{ccccc}
+SS(Total) & = & SST & + & SSE \\
+          &   &     &   &     \\
+\sum_{i=1}^k \sum_{j=1}^{n_i} (y_{ij} - \bar{y}_{\huge{\cdot \cdot}})^2 & = &
+\sum_{i=1}^k n_i (\bar{y}_{i \huge{\cdot}} - \bar{y}_{\huge{\cdot \cdot}})^2 & + &
+\sum_{i=1}^k \sum_{j=1}^{n_i} (y_{ij} - \bar{y}_{i \huge{\cdot}})^2 
+\end{array}
+$$
+
+where $k$ is the number of *treatments* and $n_i$ is the number of observations in the $i$th treatment.  
+
+- SS(Total) or Total SS (total sum of squares)  
+- SST is the sum of squares of treatments  
+- SSE is the sum of squares of error 
+
+## Statistical Test: Example 3 (5/8) 
+
+### AVOVA Table 
+
+Certainly, I can create an ANOVA (Analysis of Variance) table using markdown for you, with the components labeled as Total SS, SST, and SSE. Here's the table:
+
+| Source of Variation | Sum of Squares | Degrees of Freedom | Mean Square | F-ratio |
+|---------------------|-----------|---------------------|---------------------|---------------------|
+| Between Groups (SST) | SST | k - 1 | MST = SST / (k - 1) | F = MST / MSE |
+| Within Groups (SSE) | SSE | N - k | MSE = SSE / (N - k) | |
+| Total (Total SS) | Total SS | N - 1 | | |
+
+<br> 
+
+- SST: Sum of Squares Treatment (Between Groups)  
+- SSE: Sum of Squares Error (Within Groups)  
+- Total SS: Total Sum of Squares  
+- k: Number of groups  
+- N: Total number of observations  
+
+## Statistical Test: Example 3 (6/8) 
+
+### Data 
+
+```{r}
+data <- tibble(
+  Level_1 = c(6.9, 5.4, 5.8, 4.6, 4.0),
+  Level_2 = c(8.3, 6.8, 7.8, 9.2, 6.5),
+  Level_3 = c(8.0, 10.5, 8.1, 6.9, 9.3)
+)
+
+data
+```
+
+::: {.fragment}  
+
+### Convert the data to long format for ANOVA 
+
+```{r}
+data_long <- data %>%
+  pivot_longer(cols = everything(), 
+               names_to = "Level", 
+               values_to = "Value")
+
+data_long
+```
+
+:::  
+
+## Statistical Test: Example 3 (7/8) 
+
+### ANOVA 
+
+```{r}
+#| code-fold: show
+
+aov_results <- aov(Value ~ Level, data = data_long)
+
+summary(aov_results)
+```
+
+<br> 
+
+::: {.fragment}  
+
+### Calculate the F critical value using the F distribution 
+
+```{r}
+#| code-fold: show
+
+alpha = 0.05
+k = 3
+n = 5
+N = n * k
+
+f_crit = qf(1 - alpha, df1 = k - 1, df2 = N - k)
+f_crit
+```
+
+:::  
+
+## Statistical Test: Example 3 (8/8)  
+
+### Plot the data (which we probalby should have done first!)
+
+```{r}
+#| code-fold: true
+
+data_long |> 
+  ggplot(aes(x = Level, y = Value)) +
+  geom_point(position = position_jitter(width = 0.05), size = 3) +
+  labs(
+    x = "Level",
+    y = "Value",
+    title = "Example One-way ANOVA Example from NIST e-Handbook",
+    caption = "https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm"
+  ) +
+  theme_classic()
+```
+
+## Assignment 
+
+### Carry out a one-way ANOVA on the following dataset
+[PSU STAT 502](https://online.stat.psu.edu/stat502/lesson/3/3.6)
+
+```{r}
+#| code-fold: show
+
+greenhouse_df <- tibble(
+  Control = c(21, 19.5, 22.5, 21.5, 20.5, 21),
+  F1 = c(32, 30.5, 25, 27.5, 28, 28.6),
+  F2 = c(22.5, 26, 28, 27, 26.5, 25.2),
+  F3 = c(28, 27.5, 31, 29.5, 30, 29.2)
+)
+
+greenhouse_df
+```
+
+
+### Carry out a two-way ANOVA on the following dataset 
+[PSU STAT 502](https://online.stat.psu.edu/stat502/lesson/5/5.2)
+
+```{r}
+#| code-fold: show
+
+greenhouse_df_2 <- read_table("fert	species	resp
+control	SppA	21.0
+control	SppA	19.5
+control	SppA	22.5
+control	SppA	21.5
+control	SppA	20.5
+control	SppA	21.0
+control	SppB	23.7
+control	SppB	23.8
+control	SppB	23.8
+control	SppB	23.7
+control	SppB	22.8
+control	SppB	24.4
+f1	SppA	32.0
+f1	SppA	30.5
+f1	SppA	25.0
+f1	SppA	27.5
+f1	SppA	28.0
+f1	SppA	28.6
+f1	SppB	30.1
+f1	SppB	28.9
+f1	SppB	30.9
+f1	SppB	34.4
+f1	SppB	32.7
+f1	SppB	32.7
+f2	SppA	22.5
+f2	SppA	26.0
+f2	SppA	28.0
+f2	SppA	27.0
+f2	SppA	26.5
+f2	SppA	25.2
+f2	SppB	30.6
+f2	SppB	31.1
+f2	SppB	28.1
+f2	SppB	34.9
+f2	SppB	30.1
+f2	SppB	25.5
+f3	SppA	28.0
+f3	SppA	27.5
+f3	SppA	31.0
+f3	SppA	29.5
+f3	SppA	30.0
+f3	SppA	29.2
+f3	SppB	36.1
+f3	SppB	36.6
+f3	SppB	38.7
+f3	SppB	37.1
+f3	SppB	36.8
+f3	SppB	37.1
+", col_names = TRUE)
+
+greenhouse_df_2
+```
+
+# {.theme-section visibility=uncounted}  
+
+<h1>End of Module 5</h1>  
+
+## References 
+
+::: {#refs}
+:::  

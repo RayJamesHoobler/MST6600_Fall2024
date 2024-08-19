@@ -56,6 +56,12 @@ $code-block-font-size:	0.70em !important;
   }
 }
 
+.reveal h3 {
+  color: #117ac9;
+  font-size: 1.1em;
+  text-shadow: 1px 1px #eee;
+}
+
 .reveal ol {
   margin-left: 40px;
   font-size: 0.8em;
@@ -64,6 +70,11 @@ $code-block-font-size:	0.70em !important;
 .reveal ul {
   margin-left: 40px;
   font-size: 0.8em;
+  color: darkblue;
+
+  ul {
+    font-size: 1em; // This makes nested ul the same size as parent
+  }
 }
 
 sup {
