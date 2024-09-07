@@ -1,0 +1,60 @@
+---
+title: "Resampling Methods" 
+subtitle: "Module 08"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+## Libraries 
+
+```{r}
+#| code-fold: show 
+library(tidyverse)
+library(broom)
+```
+
+# Cross-Validation  
+
+## Cross-Validation  
+
+## The Validation Set Approach
+
+# The Bootstrap
+
+
+
+
+# {.theme-section visibility=uncounted}  
+
+<h1>End of Module 8</h1>  
+
+## References 
+
+::: {#refs}
+:::  
+
+
