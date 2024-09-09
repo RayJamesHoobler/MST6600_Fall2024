@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Approach Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .sample { margin-bottom: 20px; }
+        .dot { stroke: #000; }
+        .axis path, .axis line { stroke: #000; }
+        .axis text { font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div id="visualization"></div>
+
+    <script>
+        // Seeded random number generator
+        class SeededRandom {
+            constructor(seed) {
+                this.seed = seed;
+            }
+
+            random() {
+                const x = Math.sin(this.seed++) * 10000;
+                return x - Math.floor(x);
+            }
+        }
+
+        // Set the seed (change this value for different but reproducible results)
+        const seededRandom = new SeededRandom(12345);
+
+        const width = 600;
+        const height = 500;
+        const margin = {top: 20, right: 20, bottom: 30, left: 40};
+
+        const svg = d3.select("#visualization")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        // Generate original sample using seeded random
+        const originalSample = Array.from({length: 10}, () => seededRandom.random() * 100);
+
+        // Function to create a sample visualization with jitter
+        function createSampleVisualization(data, yPos, label) {
+            const xScale = d3.scaleLinear()
+                .domain([0, 100])
+                .range([margin.left, width - margin.right]);
+
+            const g = svg.append("g")
+                .attr("transform", `translate(0, ${yPos})`);
+
+            g.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("class", "dot")
+                .attr("cx", d => xScale(d) + (seededRandom.random() - 0.5) * 10) // Add horizontal jitter
+                .attr("cy", () => (seededRandom.random() - 0.5) * 6) // Add slight vertical jitter
+                .attr("r", 5)
+                .attr("fill", "steelblue")
+                .attr("opacity", 0.7);
+
+            g.append("text")
+                .attr("x", margin.left)
+                .attr("y", -10)
+                .text(label);
+
+            // Add x-axis
+            if (label === "Original Sample") {
+                const xAxis = d3.axisBottom(xScale);
+                g.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", `translate(0, 10)`)
+                    .call(xAxis);
+            }
+        }
+
+        // Create original sample visualization
+        createSampleVisualization(originalSample, 50, "Original Sample");
+
+        // Create bootstrap samples with more spacing
+        for (let i = 0; i < 4; i++) {
+            const bootstrapSample = Array.from({length: 10}, () => originalSample[Math.floor(seededRandom.random() * 10)]);
+            createSampleVisualization(bootstrapSample, 150 + i * 75, `Bootstrap Sample ${i + 1}`);
+        }
+    </script>
+</body>
+</html>
