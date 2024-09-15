@@ -40,7 +40,7 @@ library(patchwork)
 
 # Cross-Validation {.theme-section}
 
-## The Validation Set Approach
+## The Validation Set Approach  
 
 ::: r-stack
 ```{=html}
@@ -69,6 +69,7 @@ library(patchwork)
 </svg>
 ```
 :::
+
 
 ## The Validation Set Approach {.smaller}
 
@@ -131,7 +132,7 @@ auto_mpg_9_final |>
   theme_light()
 ```
 
-## Example: Validation Set Approach (1/)
+## Example: Validation Set Approach (1/20)
 
 ### Random 50% test train split of the data
 
@@ -145,7 +146,7 @@ auto_mpg_train <- caret::createDataPartition(auto_mpg_9_final$mpg, p = 0.5, list
 head(auto_mpg_train, 10)
 ```
 
-## Example: Validation Set Approach (2/)
+## Example: Validation Set Approach (2/20)
 
 ### Random 50% test train split of the data
 
@@ -159,7 +160,7 @@ auto_mpg_train_data
 auto_mpg_test_data
 ```
 
-## Example: Validation Set Approach (3/)
+## Example: Validation Set Approach (3/20)
 
 ### Fit a linear model on the training data
 
@@ -170,7 +171,7 @@ auto_mpg_lm <- lm(mpg ~ horsepower, data = auto_mpg_train_data)
 summary(auto_mpg_lm)
 ```
 
-## Example: Validation Set Approach (4/)
+## Example: Validation Set Approach (4/20)
 
 ### Predict the test data
 
@@ -181,7 +182,7 @@ auto_mpg_test_pred <- predict(auto_mpg_lm, newdata = auto_mpg_test_data)
 auto_mpg_test_pred
 ```
 
-## Example: Validation Set Approach (5/)
+## Example: Validation Set Approach (5/20)
 
 ### Calculate the MSE
 
@@ -192,7 +193,7 @@ mpg_mse_lm <- mean((auto_mpg_test_data$mpg - auto_mpg_test_pred)^2)
 mpg_mse_lm
 ```
 
-## Example: Validation Set Approach (6/)
+## Example: Validation Set Approach (6/20)
 
 ### Repeat the process for a quadratic model
 
@@ -203,7 +204,7 @@ auto_mpg_lm_quad <- lm(mpg ~ horsepower + I(horsepower^2), data = auto_mpg_train
 summary(auto_mpg_lm_quad)
 ```
 
-## Example: Validation Set Approach (7/)
+## Example: Validation Set Approach (7/20)
 
 ### Predict the test data of the quadratic model
 
@@ -214,7 +215,7 @@ auto_mpg_test_pred_quad <- predict(auto_mpg_lm_quad, newdata = auto_mpg_test_dat
 auto_mpg_test_pred_quad
 ```
 
-## Example: Validation Set Approach (8/)
+## Example: Validation Set Approach (8/20)
 
 ### Calculate the MSE of the quadratic model
 
@@ -225,7 +226,7 @@ mpg_mse_quad <- mean((auto_mpg_test_data$mpg - auto_mpg_test_pred_quad)^2)
 mpg_mse_quad
 ```
 
-## Example: Validation Set Approach (9/)
+## Example: Validation Set Approach (9/20)
 
 ### Repeat the process for a cubic model
 
@@ -236,7 +237,7 @@ auto_mpg_lm_cubic <- lm(mpg ~ horsepower + I(horsepower^2) + I(horsepower^3), da
 summary(auto_mpg_lm_cubic)
 ```
 
-## Example: Validation Set Approach (10/)
+## Example: Validation Set Approach (10/20)
 
 ### Predict the test data of the cubic model
 
@@ -247,7 +248,7 @@ auto_mpg_test_pred_cubic <- predict(auto_mpg_lm_cubic, newdata = auto_mpg_test_d
 auto_mpg_test_pred_cubic
 ```
 
-## Example: Validation Set Approach (11/)
+## Example: Validation Set Approach (11/20)
 
 ### Calculate the MSE of the cubic model
 
@@ -258,7 +259,7 @@ mpg_mse_cubic <- mean((auto_mpg_test_data$mpg - auto_mpg_test_pred_cubic)^2)
 mpg_mse_cubic
 ```
 
-## Example: Validation Set Approach (12/)
+## Example: Validation Set Approach (12/20)
 
 ### Compare the MSE of the models
 
@@ -277,7 +278,7 @@ mpg_mse_df |>
 
 # DRY (Don't Repeat Yourself) {.theme-section}
 
-## Example: Validation Set Approach (13/)
+## Example: Validation Set Approach (13/20)
 
 ### Use the poly() function and use a for loop
 
@@ -304,7 +305,7 @@ mpg_model_dry_df <- tibble(
 mpg_model_dry_df
 ```
 
-## Example: Validation Set Approach (14/)
+## Example: Validation Set Approach (14/20
 
 ### Plot the MSE values
 
@@ -331,7 +332,7 @@ mpg_model_dry_df |>
   theme_light()
 ```
 
-## Example: Validation Set Approach (15/)
+## Example: Validation Set Approach (15/20)
 
 ### How does MSE vary with our choice of the "random seed" used to split the data?
 
@@ -364,7 +365,7 @@ result <- mse_seed(seed_values)
 result
 ```
 
-## Example: Validation Set Approach (16/)
+## Example: Validation Set Approach (16/20)
 
 ::: columns
 ::: {.column width="50%"}
@@ -433,7 +434,7 @@ result_df |>
 :::
 :::
 
-## Example: Validation Set Approach (17/)
+## Example: Validation Set Approach (17/20)
 
 ### Mean values for the MSE
 
@@ -445,7 +446,7 @@ result_df |>
   summarise(MSE = mean(MSE))
 ```
 
-## Example: Validation Set Approach (18/)
+## Example: Validation Set Approach (18/20)
 
 ### Plot the predicted values versus the actual values for order 2
 
@@ -474,7 +475,7 @@ auto_mpg_test_data |>
   theme_light()
 ```
 
-## Example: Validation Set Approach (19/)
+## Example: Validation Set Approach (19/20)
 
 ### What about a Poisson model?
 
@@ -494,7 +495,7 @@ mpg_mse_gamma <- mean((auto_mpg_test_data$mpg - auto_mpg_test_pred_gamma)^2)
 mpg_mse_gamma
 ```
 
-## Example: Validation Set Approach (20/)
+## Example: Validation Set Approach (20/20)
 
 ### Plot the predicted values versus the actual values for the Poisson and gamma models
 
@@ -730,7 +731,7 @@ result_df |> gt::gt()
 ```
 :::
 
-## Example: k-Fold Cross-Validation (1/) {.smaller}
+## Example: k-Fold Cross-Validation (1/1) {.smaller}
 
 ### Perform k-Fold Cross-Validation using the `cv.glm()` function
 
@@ -749,7 +750,7 @@ $$
 CV_{(k)} = \frac{1}{k} \sum_{i=1}^{k} \text{MSE}_i
 $$
 
-## Example: k-Fold Cross-Validation (2/)
+## Example: k-Fold Cross-Validation (2/2)
 
 ### Perform k-Fold Cross-Validation over a range of polynomial degrees
 
@@ -777,7 +778,7 @@ result_df <- auto_mpg_cv_glm_poly_kfold(10, 10)
 result_df |> gt::gt()  
 ```
 
-## Example: k-Fold Cross-Validation (3/)
+## Example: k-Fold Cross-Validation (3/3)
 
 ### Compare the time for the LOOCV and k-fold CV methods
 
@@ -859,7 +860,85 @@ Cross-validation helps us identify this balance by:
 <iframe src="bootstrap_visualization.html" width="620" height="520" style="border:none;"></iframe>
 
 
-## Example: The Bootstrap (1/) {.smaller}  
+## Example 1: The Bootstrap (1/2)  
+
+### Let's use the bootstrap method to estimate the mean and standard error for a uniform distribution 
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+# Generate data from a uniform distribution
+set.seed(42)
+
+n <- 1000
+data <- runif(n, min = 0, max = 10)
+
+# Histogram of the data 
+data |> 
+  as_tibble_col(column_name = "data") |> 
+  ggplot() +
+  geom_histogram(aes(x = data), binwidth = 0.5, fill = "skyblue", color = "black", boundary = 0) +
+  labs(
+    title = "Histogram of the Uniform Distribution",
+    x = "Data",
+    y = "Density"
+  ) +
+  theme_light()
+```
+
+## Example 1: The Bootstrap (2/2)
+
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+# Bootstrap function
+bootstrap_mean <- function(data, B = 1000) {
+  n <- length(data) # data is a vector
+  
+  mean_values <- replicate(B, {
+    indices_sample <- sample(1:n, replace = TRUE)
+    mean(data[indices_sample])
+  })
+  
+  return(mean_values)
+}
+
+# Use the bootstrap function
+mean_values <- bootstrap_mean(data, B = 1000)
+
+mean_values |> 
+  as_tibble_col(column_name = "mean_bootstrap") |> 
+  ggplot() +
+  geom_histogram(aes(x = mean_bootstrap, y = after_stat(density)), bins = 30, fill = "skyblue", color = "black") +
+  geom_function(fun = dnorm, args = list(mean = mean(mean_values), sd = sd(mean_values)), color = "blue") +
+  labs(
+    title = "Bootstrap Distribution of the Mean of Uniform Distribution",
+    x = "Mean",
+    y = "Density"
+  ) +
+  theme_light()
+```
+
+## Example 2: The Bootstrap (1/5) 
+
+According to the NIST book, the mean and standard deviation are given by the following
+
+$$
+\text{Mean} = \frac{A + B}{2}
+$$
+
+The calculated mean is `r round(mean(mean_values), 1)`.
+Of course, the mean from the formula above is simply `r 5`.
+
+
+
+
+## Example 2: The Bootstrap (2/5) {.smaller}  
 
 Simulated Data of 100 pairs of returns.
 
@@ -908,7 +987,7 @@ p1 + p2
 
 ::::  
 
-## Example: The Bootstrap (2/)  
+## Example 2: The Bootstrap (3/5)  
 
 :::: {.columns}  
 
@@ -928,7 +1007,91 @@ where $\sigma_X^2$ is the variance of $X$, $\sigma_Y^2$ is the variance of $Y$, 
 
 ::::  
 
-## Example: The Bootstrap (3/)  
+## Example 2: The Bootstrap (4/5)  
+
+### Using the Bootstrap to estimate the standard error of $\hat{\alpha}$
+
+```{r}
+#| code-fold: show
+
+# Function to calculate alpha
+calculate_alpha <- function(data, indices) {
+  X <- data$X[indices]
+  Y <- data$Y[indices]
+  
+  sigma_X <- var(X)
+  sigma_Y <- var(Y)
+  sigma_XY <- cov(X, Y)
+  
+  alpha <- (sigma_Y - sigma_XY) / (sigma_X + sigma_Y - 2 * sigma_XY)
+  return(alpha)
+}
+
+# Bootstrap function
+bootstrap_alpha <- function(data, B = 1000) {
+  n <- nrow(data)
+  indices <- 1:n
+  
+  alpha_values <- replicate(B, {
+    indices_sample <- sample(indices, replace = TRUE)
+    calculate_alpha(data, indices_sample)
+  })
+  
+  return(alpha_values)
+}
+
+# Example usage
+set.seed(42)
+alpha_values <- bootstrap_alpha(portfolio, B = 1000)
+mean(alpha_values)
+```
+
+```{r}
+alpha_values |> 
+  as_tibble_col(column_name = "alpha_bootstrap") |> 
+  ggplot() +
+  geom_histogram(aes(x = alpha_bootstrap, y = after_stat(density)),bins = 30, fill = "skyblue", color = "black") +
+  geom_function(fun = dnorm, args = list(mean = mean(alpha_values), sd = sd(alpha_values)), color = "blue") +
+  labs(
+    title = "Bootstrap Distribution of Alpha",
+    x = "Alpha",
+    y = "Density"
+  ) +
+  theme_light()
+```
+
+## Example 2: The Bootstrap (5/5) 
+
+### Estimate the uncertainty in $\hat{\alpha}$
+
+```{r}
+#| code-fold: show
+
+alpha_values |> 
+  as_tibble_col(column_name = "alpha_bootstrap") |> 
+  summarise(
+    Mean = mean(alpha_bootstrap),
+    SD = sd(alpha_bootstrap),
+    SE = sd(alpha_bootstrap) / sqrt(length(alpha_bootstrap)),
+    UCI_95 = Mean + SE*qt(c(0.975), length(alpha_bootstrap) - 1),
+    LCI_95 = Mean - SE*qt(0.975, length(alpha_values) - 1)
+  )
+```
+
+
+
+
+#  {.theme-section visibility="uncounted"}
+
+<h1>End of Module 8</h1>
+
+## References
+
+::: {#refs}
+:::
+
+## Sandbox {visibility="hidden"}
+
 
 ```{r}
 test_tibble <- tibble(
@@ -966,13 +1129,3 @@ print(stacked_df)
 ```
 
 
-
-
-#  {.theme-section visibility="uncounted"}
-
-<h1>End of Module 8</h1>
-
-## References
-
-::: {#refs}
-:::
