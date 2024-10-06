@@ -1,0 +1,1321 @@
+---
+title: "Linear Model Selection, Regularization and Moving Beyond Linearity"
+subtitle: "Module 09"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+## Libraries 
+
+```{r}
+#| code-fold: show
+
+library(tidyverse)
+library(broom) # For tidying model output
+library(leaps) # For best subset selection 
+library(readxl) # For reading Excel files
+library(patchwork) # For combining plots
+library(latex2exp) # For LaTeX expressions
+library(rlang) # For working with formulas
+library(glmnet) # For ridge regression and the lasso  
+```
+
+
+
+
+
+# Linear Model Selection and Regularization {.theme-section}
+
+
+
+
+
+## Subset Selection (1/3)
+
+### Best Subset Selection  
+### Stepwise Selection  
+### Choosing the Optimal Model  
+
+## Subset Selection (2/3)
+
+For a linear model with $p$ predictors
+
+$$
+Y = \beta_0 + \beta_1X_1 + \beta_2X_2 + \ldots + \beta_pX_p + \epsilon
+$$
+
+there are $2^p$ possible models.
+
+<br>
+
+For example with $p=3$ predictors, there are $2^3 = 8$ possible models. They can be expressed as:
+
+$$
+\begin{align*}
+Y &= \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \epsilon \\
+Y &= \beta_0 + \beta_1X_1 + \beta_2X_2 + \epsilon \\
+Y &= \beta_0 + \beta_1X_1 + \beta_3X_3 + \epsilon \\
+Y &= \beta_0 + \beta_2X_2 + \beta_3X_3 + \epsilon \\
+Y &= \beta_0 + \beta_1X_1 + \epsilon \\
+Y &= \beta_0 + \beta_2X_2 + \epsilon \\
+Y &= \beta_0 + \beta_3X_3 + \epsilon \\
+Y &= \beta_0 + \epsilon \\
+\end{align*}
+$$
+
+## Subset Selection (3/3)  
+
+### What are we trying to achieve?  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+**Prediction Accuracy** 
+
+::: {.fragment}  
+::: {.transparent}  
+Constraints on the number of predictors can lead to better prediction accuracy.
+:::  
+:::  
+
+:::  
+::: {.column width=50%}  
+
+**Model Interpretability**
+
+::: {.fragment}  
+::: {.transparent}  
+A model with fewer predictors is easier to interpret.  
+:::
+:::  
+
+:::  
+
+::::  
+
+## Best Subset Selection (1/9)  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+### ISLR Algorithm 6.1
+
+1. Let $M_0$ denote the null model, which contains no predictors.
+2. For $k=1,2,\ldots,p$:
+    a. Fit all $\binom{p}{k}$ models that contain exactly $k$ predictors.
+    b. Pick the best among these models, and call it $M_k$. Here best is defined as having the smallest RSS or highest $R^2$.
+    
+3. Select a single best model from among $M_0, M_1, \ldots, M_p$ using cross-validated prediction error, $C_p$, BIC, or adjusted $R^2$.
+
+:::  
+
+::::  
+
+::: {.fragment}  
+::: {.transparent}  
+**Note:**  
+
+Step 2 is preformed on a training set.  
+Step 3 is performed on a validation set.
+
+$$
+\binom{p}{k} = (\textrm{p choose k})= \frac{p!}{k!(p-k)!}
+$$
+:::  
+:::  
+
+
+
+## Best Subset Selection (2/9) {.smaller}  
+
+### Load the concrete data set
+
+Variable Information:
+
+Given is the variable name, variable type, the measurement unit and a brief description. 
+The concrete compressive strength is the regression problem. The order of this listing 
+corresponds to the order of numerals along the rows of the database. 
+
+Name -- Data Type -- Measurement -- Description
+
+- Cement (component 1) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Blast Furnace Slag (component 2) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Fly Ash (component 3) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Water (component 4) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Superplasticizer (component 5) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Coarse Aggregate (component 6) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Fine Aggregate (component 7) -- quantitative -- kg in a m3 mixture -- Input Variable  
+- Age -- quantitative -- Day (1~365) -- Input Variable  
+- Concrete compressive strength -- quantitative -- MPa -- Output Variable   
+
+```{r}
+#| code-fold: show
+
+concrete_column_names <- c("cement", "slag", "ash", "water", "superplasticizer", "coarse_aggregate", "fine_aggregate", "age", "strength")
+
+concrete <- read_xls("datasets/concrete+compressive+strength/Concrete_Data.xls") |> 
+  rename_with(~ concrete_column_names)
+
+concrete
+```
+
+
+
+## Best Subset Selection (3/9) {.smaller} 
+
+```{r}
+#| code-fold: show  
+
+regfit_full_8 <- regsubsets(strength ~ ., data = concrete, nvmax = 8)
+
+summary(regfit_full_8)
+```
+
+
+## Best Subset Selection (4/9) {.smaller}  
+
+```{r}
+#| code-fold: show  
+
+regfit_full <- regsubsets(strength ~ ., data = concrete, nvmax = 8, nbest = 256, really.big = TRUE)
+
+summary(regfit_full)
+```
+
+## Best Subset Selection (5/9) {.smaller}
+
+### A quick comparison of two models  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+summary(lm(strength ~ cement, data = concrete))
+```
+
+:::  
+
+::: {.column width=50%}  
+
+```{r}
+summary(lm(strength ~ age, data = concrete))
+```
+
+:::  
+
+::::  
+
+## Best Subset Selection (6/9)  
+
+### What's available in the `regsubsets()` function?  
+
+(You will need to review the documentation for details.) 
+
+```{r}
+#| code-fold: show  
+
+names(summary(regfit_full))
+```
+
+- **which**: A logical matrix indicating which elements are in each model  
+
+- **rsq**: The r-squared for each model  
+
+- **rss**: Residual sum of squares for each model  
+
+- **adjr2**: Adjusted r-squared  
+
+- **cp**: Mallows' Cp  
+
+- **bic**: Schwartz's information criterion, BIC  
+
+- **outmat**: A version of the which component that is formatted for printing  
+
+- **obj**: A copy of the regsubsets object  
+
+
+## Best Subset Selection (7/9)  
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+concrete_subset_adjr2 <- as_tibble(summary(regfit_full)$which, rownames = "model") |> 
+  select(model) |> 
+  bind_cols(as_tibble_col(summary(regfit_full)$adjr2, column_name = "adjr2")) |> 
+  mutate(model = as_factor(model))
+
+concete_model_max_adjr2 <- concrete_subset_adjr2 |> 
+  group_by(model) |>
+  summarise(adjr2 = max(adjr2)) |>
+  ungroup()
+
+concrete_subset_adjr2 |>
+  ggplot() +
+  geom_point(aes(x = model, y = adjr2), alpha = 1/5) +
+  geom_line(aes(x = model, y = adjr2, group = 1),
+            data = concete_model_max_adjr2, 
+            color = "red") +
+   geom_point(aes(x = model, y = adjr2),
+            data = concete_model_max_adjr2, 
+            color = "red") +
+  labs(
+    title = "Best Subset Selection for Concrete Data",
+    subtitle = "Adjusted *R<sup>2</sup>* for each model",
+    x = "Number of Predictors",
+    y = NULL
+  ) +
+  theme_light() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 16),
+   plot.title.position = "plot",
+   plot.subtitle = ggtext::element_markdown(size = 12)
+  )
+```
+
+## Best Subset Selection (8/9)  
+
+### Focus on best models for each number of predictors  
+
+```{r}
+
+regfit_full_8 <- regsubsets(strength ~ ., data = concrete, nvmax = 8, really.big = FALSE)
+
+summary(regfit_full_8)
+``` 
+
+
+## Best Subset Selection (9/9)
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+
+```{r}
+#| code-fold: true 
+#| fig-width: 6
+#| fig-height: 3
+#| out-width: 600px
+#| out-height: 300px
+
+as_tibble(summary(regfit_full_8)$which, rownames = "model") |> 
+  mutate(
+    adjr2 = summary(regfit_full_8)$adjr2,
+    model = as_factor(model),
+    ) |>
+  select(-`(Intercept)`) |>
+  pivot_longer(cols = 2:9, , names_to = "variable", values_to = "included") |> 
+  mutate(variable = str_replace(variable, "_", " ")) |> 
+  mutate(variable = reorder(as_factor(variable), adjr2)) |> 
+  ggplot() +
+  geom_tile(aes(x = model, y = variable, fill = included), color = "white") +
+  labs(
+    title = "Best Subset Selection for Concrete Data",
+    subtitle = "Variables available for each model ordered by adjusted *R<sup>2</sup>*",
+    x = "Number of Predictors",
+    y = NULL,
+    fill = "Varible included \nin the model?"
+  ) +
+  scale_fill_manual(values = c("red", "darkgrey")) +
+  scale_x_discrete() +
+  theme_minimal() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 16),
+   plot.title.position = "plot",
+   plot.subtitle = ggtext::element_markdown(size = 12)
+  ) 
+```
+
+:::  
+
+::: {.column width=40%}  
+Subset selection is a useful tool for selecting the best model for a given data set; however, it can be computationally expensive. 
+
+If the number of predictors is large, the chance of overfitting the model also increases.  
+
+:::  
+
+::::  
+
+
+## Stepwise Selection  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+We can use *Stepwise* methods to evaluate models with a large number of predictors. 
+
+### Forward Selection  
+
+Forward selection starts with the null model and adds predictors one at a time.  The number of models fit is 
+
+$$
+1 + p(p+1)/2
+$$
+
+For our example of $p = 8$ predictors, this would be $1 + 8(8+1)/2 = 37$ models instead of the $2^8 = 256$ models for best subset selection.
+
+### Backward Selection  
+
+Backward selection starts with the full model and removes predictors one at a time.  The number of models fit is the same as for forward selection.  
+
+:::  
+
+::::  
+
+## Stepwise Selection Algorithms {.smaller}  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### Forward Selection 
+
+1. Start with the null model, $M_0$, which contains no predictors.
+2. For $k=0,1,\ldots,p-1$:
+    a. Consider all $p-k$ models that augment the predictors in $M_k$ with one additional predictor.
+    b. Choose the best among these $p-k$ models, and call it $M_{k+1}$. Here best is defined as having the smallest RSS or highest $R^2$.
+    
+3. Select a single best model from among $M_0, M_1, \ldots, M_p$ using cross-validated prediction error, $C_p$, BIC, or adjusted $R^2$.
+
+:::  
+
+::: {.column width=50%}  
+
+### Backward Selection  
+
+1. Start with the full model, $M_p$, which contains all predictors.
+2. For $k=p,p-1,\ldots,1$:
+    a. Consider all $k$ models that contain all but one of the predictors in $M_k$, for a total of $k-1$ predictors.
+    b. Choose the best among these $k$ models, and call it $M_{k-1}$. Here best is defined as having the smallest RSS or highest $R^2$.
+3. Select a single best model from among $M_0, M_1, \ldots, M_p$ using cross-validated prediction error, $C_p$, BIC, or adjusted $R^2$.
+
+:::  
+
+::::  
+
+## Stepwise Selection: Forward Selection {.smaller}  
+
+```{r}
+#| code-fold: show 
+
+regfit_forward <- regsubsets(strength ~ ., data = concrete, nvmax = 8, method = "forward")
+
+summary(regfit_forward)
+```
+
+## Stepwise Selection: Backward Selection {.smaller}  
+
+```{r}
+#| code-fold: show
+
+regfit_backward <- regsubsets(strength ~ ., data = concrete, nvmax = 8, method = "backward")
+
+summary(regfit_backward)
+```
+
+## Comparing Models for Subset Selection Methods
+
+
+```{r}
+#| echo: false
+
+p1_subset <- as_tibble(summary(regfit_full_8)$which, rownames = "model") |> 
+  mutate(
+    adjr2 = summary(regfit_full_8)$adjr2,
+    model = as_factor(model)
+    ) |>
+  select(-`(Intercept)`) |>
+  pivot_longer(cols = 2:9, , names_to = "variable", values_to = "included") |> 
+  mutate(variable = str_replace(variable, "_", " ")) |> 
+  mutate(variable = reorder(as_factor(variable), adjr2)) |> 
+  ggplot() +
+  geom_tile(aes(x = model, y = variable, fill = included), color = "white") +
+  labs(
+    title = "Best Subset Selection",
+    x = "Number of Predictors",
+    y = NULL,
+    fill = "Varible included \nin the model?"
+  ) +
+  scale_fill_manual(values = c("red", "darkgrey")) +
+  scale_x_discrete() +
+  theme_minimal() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 12),
+   ) 
+```
+
+
+```{r}
+#| echo: false 
+
+p2_subset <- as_tibble(summary(regfit_forward)$which, rownames = "model") |> 
+  mutate(
+    adjr2 = summary(regfit_forward)$adjr2,
+    model = as_factor(model)
+    ) |>
+  select(-`(Intercept)`) |>
+  pivot_longer(cols = 2:9, , names_to = "variable", values_to = "included") |> 
+  mutate(variable = str_replace(variable, "_", " ")) |> 
+  mutate(variable = reorder(as_factor(variable), adjr2)) |> 
+  ggplot() +
+  geom_tile(aes(x = model, y = variable, fill = included), color = "white") +
+  labs(
+    title = "Forward Selection",
+    x = "Number of Predictors",
+    y = NULL,
+    fill = "Varible included \nin the model?"
+  ) +
+  scale_fill_manual(values = c("red", "darkgrey")) +
+  scale_x_discrete() +
+  theme_minimal() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 12),
+  ) 
+```
+
+
+```{r}
+#| echo: false
+
+p3_subset <- as_tibble(summary(regfit_backward)$which, rownames = "model") |> 
+  mutate(
+    adjr2 = summary(regfit_backward)$adjr2,
+    model = as_factor(model)
+    ) |>
+  select(-`(Intercept)`) |>
+  pivot_longer(cols = 2:9, , names_to = "variable", values_to = "included") |> 
+  mutate(variable = str_replace(variable, "_", " ")) |> 
+  mutate(variable = reorder(as_factor(variable), adjr2)) |> 
+  ggplot() +
+  geom_tile(aes(x = model, y = variable, fill = included), color = "white") +
+  labs(
+    title = "Backward Selection",
+    x = "Number of Predictors",
+    y = NULL,
+    fill = "Varible included \nin the model?"
+  ) +
+  scale_fill_manual(values = c("red", "darkgrey")) +
+  scale_x_discrete() +
+  theme_minimal() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 12),
+  ) 
+```
+
+```{r}
+#| echo: false
+p1_subset + p2_subset + p3_subset + plot_layout(guides = 'collect', axes = "collect")
+```
+
+
+
+## Choosing the Optimal Model  
+
+::: {.callout-important}
+The model containing all of the predictors will always have the smallest $RSS$ and the largest $R^2$
+:::
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+
+Recall, we want to choose a model based on its ability to predict new data. 
+
+In the above examples, we didn't create a test set to evaluate the models, we simply used the entire dataset.   
+
+Unfortunately, the `regsubsets()` function does not have a built-in method for evaluating models on a test set.
+
+:::  
+
+::::  
+
+## Metrics for Model Selection (1/2)
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### RSS: Residual Sum of Squares
+
+$$
+RSS = \sum_{i=1}^{n} (y_i - \hat{y}_i)^2
+$$
+
+
+
+### $R^2$: Coefficient of Determination
+
+$$
+R^2 = 1 - \frac{RSS}{TSS}
+$$
+
+$TSS = \sum_{i=1}^{n} (y_i - \bar{y})^2$ is the Total Sum of Squares.
+
+:::  
+::: {.column width=50%}  
+
+### MSE: Mean Squared Error  
+
+$$
+MSE = \frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y}_i)^2 = \frac{RSS}{n}
+$$
+
+:::  
+
+::::  
+
+## Metrics for Model Selection (2/2)  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### Adjusted $R^2$:
+
+$$
+\textrm{Adjusted }R^2 = 1 - \frac{RSS/(n-d-1)}{TSS/(n-1)}
+$$
+
+### Mallows' $C_p$: 
+
+$$
+C_p = \frac{1}{n} (RSS + 2d\hat{\sigma}^2)
+$$
+
+
+
+:::  
+::: {.column width=50%}  
+
+### Akaike Information Criterion (AIC):
+
+$$
+AIC = \frac{1}{n} (RSS + 2d\hat{\sigma}^2)
+$$
+
+### Bayesian Information Criterion (BIC):
+
+$$
+BIC = \frac{1}{n} (RSS + \log(n)d\hat{\sigma}^2)
+$$
+
+:::  
+
+::::  
+
+where $d$ is the number of predictors in the model and $\hat{\sigma}^2$ is an estimate of the variance of the error term.
+
+
+## Working with Combinations {.smaller}  
+
+Walk through the following code to examing how we can work with combinations of predictors.  
+
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+# Initialize an empty list to store model information
+model_list <- list()
+
+total_combinations <- 0
+
+for (i in 1:8) {
+  concrete_predictors <- combn(concrete_column_names[1:8], i)
+  num_combinations <- ncol(concrete_predictors)
+  
+  cat(sprintf("\nNumber of predictors: %d\n", i))
+  cat(sprintf("Number of combinations: %d\n", num_combinations))
+  
+  total_combinations <- total_combinations + num_combinations
+  
+  for (j in 1:num_combinations) {
+    formula <- reformulate(concrete_predictors[,j], response = "strength")
+    model_combination <- lm(formula, data = concrete)
+    
+    # Add model information to the list
+    model_list[[length(model_list) + 1]] <- list(
+      num_predictors = i,
+      combination = paste(concrete_predictors[,j], collapse = ", "),
+      formula = paste(deparse(formula), collapse = " "),  # Ensure single string
+      model = model_combination
+    )
+  }
+}
+
+# Convert the list to a tibble
+model_results <- tibble::tibble(
+  num_predictors = map_int(model_list, "num_predictors"),
+  combination = map_chr(model_list, "combination"),
+  formula = map_chr(model_list, "formula"),
+  model = map(model_list, "model")
+)
+
+cat(sprintf("\nTotal number of combinations: %d\n", total_combinations))
+cat(sprintf("Number of rows in model_results: %d\n", nrow(model_results)))
+
+# Display the resulting tibble
+model_results
+```
+
+
+## Custom Function to Split Data and Compare Models {.smaller}  
+
+For many cases, you'll be able to use package functions to perform model selection.  
+
+
+```{r}
+#| code-fold: true  
+#| fig-width: 6
+#| out-width: 600px
+
+# Created with the help of Calude.ai
+
+compare_models <- function(data, response_var, predictor_vars, proportion = 0.8, seed = NULL) {
+  # Set seed if provided
+  if (!is.null(seed)) set.seed(seed)
+  
+  # Capture the predictor variables
+  pred_vars <- enquo(predictor_vars)
+  
+  # Select the specified columns
+  selected_data <- data |> 
+    select(!!response_var, !!pred_vars)
+  
+  # Get column names
+  all_column_names <- colnames(selected_data)
+  response_name <- as.character(response_var)
+  predictor_names <- setdiff(all_column_names, response_name)
+  
+  # Create train/test split
+  n <- nrow(selected_data)
+  train_indices <- sample(1:n, size = round(proportion * n))
+  train_data <- selected_data[train_indices, ]
+  test_data <- selected_data[-train_indices, ]
+  
+  # Initialize an empty list to store model information
+  model_list <- list()
+  total_combinations <- 0
+  
+  for (i in 1:length(predictor_names)) {
+    predictor_combinations <- combn(predictor_names, i)
+    num_combinations <- ncol(predictor_combinations)
+    
+    total_combinations <- total_combinations + num_combinations
+    
+    for (j in 1:num_combinations) {
+      formula <- reformulate(predictor_combinations[,j], response = response_name)
+      model_combination <- lm(formula, data = train_data)
+      
+      # Make predictions on test data
+      predictions <- predict(model_combination, newdata = test_data)
+      
+      # Calculate RMSE and R-squared on test data
+      rmse <- sqrt(mean((test_data[[response_name]] - predictions)^2))
+      rsq <- cor(test_data[[response_name]], predictions)^2
+      
+      # Add model information to the list
+      model_list[[length(model_list) + 1]] <- list(
+        num_predictors = i,
+        combination = paste(predictor_combinations[,j], collapse = ", "),
+        formula = paste(deparse(formula), collapse = " "),
+        model = model_combination,
+        test_rmse = rmse,
+        test_rsq = rsq
+      )
+    }
+  }
+  
+  # Convert the list to a tibble
+  model_results <- tibble::tibble(
+    num_predictors = map_int(model_list, "num_predictors"),
+    combination = map_chr(model_list, "combination"),
+    formula = map_chr(model_list, "formula"),
+    model = map(model_list, "model"),
+    test_rmse = map_dbl(model_list, "test_rmse"),
+    test_rsq = map_dbl(model_list, "test_rsq")
+  )
+  
+  cat(sprintf("\nTotal number of models: %d\n", nrow(model_results)))
+  
+  return(model_results)
+}
+
+# Example usage:
+result <- compare_models(concrete, "strength", concrete_column_names, proportion = 0.8, seed = 42)
+
+# View results:
+# result |>  arrange(test_rmse) |>  head(10)  # Top 10 models by RMSE
+result |>  arrange(desc(test_rsq)) |>  head(10)  # Top 10 models by R-squared
+```
+
+## Test Model Results 
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+max_results <- result |> 
+  group_by(num_predictors) |> 
+  filter(test_rsq == max(test_rsq)) |> 
+  ungroup()
+
+result |> 
+  ggplot() +
+  geom_point(aes(x = num_predictors, y = test_rsq), alpha = 1/3) +
+  geom_line(aes(x = num_predictors, y = test_rsq), data = max_results, color = "red") +
+  geom_point(aes(x = num_predictors, y = test_rsq), data = max_results, color = "red") +
+  labs(
+    title = "Model Selection Using Subset Selection on Test Data",
+    subtitle = "Custom function to compare models based on test data",
+    x = "Number of Predictors",
+    y = "R<sup>2</sup>"
+  ) +
+  scale_x_continuous(breaks = 1:8) +
+  theme_light() +
+  theme(
+   plot.title = ggtext::element_markdown(size = 16),
+   plot.title.position = "plot",
+   plot.subtitle = ggtext::element_markdown(size = 12),
+   axis.title = ggtext::element_markdown(size = 10)
+  )
+```
+
+
+
+
+
+
+
+## Assignment: Subset Selection Methods  
+
+### ISLR Lab: 6.5.1 Subset Selection Methods  
+
+
+
+
+
+## Shrinkage Methods  
+
+### Ridge Regression  
+### Lasso  
+### Elastic Net  
+### Selecting the Tuning Parameter  
+
+## Ridge Regression  
+
+Recall that linear regression minimizes RSS to find the best-fitting line.
+
+$$
+RSS = \sum_{i=1}^{n} (y_i - \hat{y}_i)^2 = \sum_{i=1}^{n} \left (y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right )^2
+$$
+
+::: {.fragment}  
+
+Ridge regression adds a penalty term to the RSS to shrink the coefficients towards zero. 
+
+$$
+\sum_{i=1}^{n} \left (y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right )^2 + \lambda \sum_{j=1}^{p} \beta_j^2
+$$
+
+$\lambda$ controls the amount of shrinkage.
+
+$\lambda \ge 0$ is a *tuning parameter* that controls the amount of shrinkage and is determined using cross-validation.  
+
+:::
+
+::: {.fragment}  
+
+::: {.callout-note}  
+We will use the `glmnet` package to perform ridge regression.
+:::  
+
+:::  
+
+## Ridge Regression Penalty Term  
+
+The penalty term is often referred to as l2 regularization and has a shorthand notation of
+
+$$
+|| \beta ||_2^2 = \sum_{j=1}^{p} \beta_j^2
+$$
+
+## Scaling the Data {.smaller}   
+
+### Standardizing the Predictors (ISLR, 239)  
+
+>The ridge regression coeﬀicient estimates can change substantially when multiplying a given predictor by a constant.  
+>$X_j \hat{\beta}_{j,\lambda}^R$ will depend not only on the value of $\lambda$, but also on the scaling of the $j$th predictor. . . the value of $X_j \hat{\beta}_{j,\lambda}^R$ may even depend on the scaling of the other predictors! Therefore, it is best to apply ridge regression after standardizing the predictors, using the formula
+
+$$
+\tilde{x}_{ij} = \frac{x_{ij}}{\sqrt{\frac{1}{n} \sum_{i=1}^{n} (x_{ij} - \bar{x}_j)^2}}
+$$
+
+### Standardization the Predictors (more common method)  
+
+Alternatively, we can use the `scale()` function in R to center and scale the predictors.  
+This is often referred to as *z-score* scaling.
+
+
+$$
+\tilde{x}_{ij} = \frac{x_{ij} - \bar{x}_j}{\sqrt{\frac{1}{n} \sum_{i=1}^{n} (x_{ij} - \bar{x}_j)^2}}
+$$
+
+
+## Ridge Regression Example (1/2)  
+
+```{r}
+concrete_ridge <- glmnet(x = scale(as.matrix(concrete[, 1:8])), y = concrete$strength, alpha = 0, standardize = FALSE)
+
+# names(concrete_ridge)
+# concrete_ridge$lambda
+
+as_tibble(as.matrix(concrete_ridge$beta), rownames = "predictor") |> 
+  pivot_longer(cols = 2:101, names_to = "lambda", values_to = "beta_values") |> 
+  mutate(lambda_values = rep(concrete_ridge$lambda, times = 8)) |> 
+  ggplot() +
+  geom_line(aes(x = lambda_values, y = beta_values, color = predictor)) +
+  labs(
+    title = "Ridge Regression Coefficients",
+    subtitle = "Coefficient values for each predictor over different lambda values",
+    x = TeX(r'($lambda$)'),
+    y = "Coefficient Value"
+  ) +
+  scale_x_log10() +
+  theme_light()
+```
+
+
+## Ridge Regression Example (2/2)  
+
+### With Cross-Validation  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+lambda_values <- 10^seq(3, -1, length = 100)
+
+concrete_ridge_cv <- cv.glmnet(x = scale(as.matrix(concrete[, 1:8])), y = concrete$strength, alpha = 0, standardize = FALSE, nfolds = 10, lambda = lambda_values)
+
+ggplot() +
+  geom_point(aes(x = concrete_ridge_cv$lambda, y = concrete_ridge_cv$cvm)) +
+  labs(
+    title = "Ridge Regression Cross-Validation",
+    subtitle = "Cross-validated mean squared error for different lambda values",
+    x = TeX(r'($\lambda$)'),
+    y = "Mean Squared Error"
+  ) +
+  scale_x_log10(label = scales::label_comma(accuracy = 1)) +
+  theme_light()
+```
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+plot(concrete_ridge_cv)
+```
+
+:::  
+
+::::  
+
+
+## The Lasso  
+
+### Lasso stands for Least Absolute Shrinkage and Selection Operator. 
+
+### The lasso penalty term is l1 regularization.  
+
+$$
+\sum_{i=1}^{n} \left (y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right )^2 + \lambda \sum_{j=1}^{p} | \beta_j |
+$$
+
+
+Similar to Ridge regression, $\lambda \ge 0$ is a *tuning parameter* that controls the amount of shrinkage and is determined using cross-validation. 
+
+Unlike Ridge regression, the lasso can set coefficients to zero, effectively performing variable selection.  
+
+The data should be standardized before using the lasso.
+
+## Lasso Example (1/2)  
+
+```{r}
+concrete_lasso <- glmnet(x = scale(as.matrix(concrete[, 1:8])), y = concrete$strength, alpha = 1, standardize = FALSE)
+
+as_tibble(as.matrix(concrete_lasso$beta), rownames = "predictor") |> 
+  pivot_longer(cols = 2:78, names_to = "lambda", values_to = "beta_values") |> 
+  mutate(lambda_values = rep(concrete_lasso$lambda, times = 8)) |> 
+  ggplot() +
+  geom_line(aes(x = lambda_values, y = beta_values, color = predictor)) +
+  labs(
+    title = "Lasso Coefficients",
+    subtitle = "Coefficient values for each predictor over different lambda values",
+    x = TeX(r'($\lambda$)'),
+    y = "Coefficient Value"
+  ) +
+  scale_x_log10() +
+  theme_light()
+```
+
+## Lasso Example (2/2)  
+
+### With Cross-Validation  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+lambda_values <- 10^seq(2, -1, length = 100)
+
+concrete_lasso_cv <- cv.glmnet(x = scale(as.matrix(concrete[, 1:8])), y = concrete$strength, alpha = 1, standardize = FALSE, nfolds = 10, lambda = lambda_values)
+
+ggplot() +
+  geom_point(aes(x = concrete_lasso_cv$lambda, y = concrete_lasso_cv$cvm)) +
+  labs(
+    title = "Lasso Cross-Validation",
+    subtitle = "Cross-validated mean squared error for different lambda values",
+    x = TeX(r'($\lambda$)'),
+    y = "Mean Squared Error"
+  ) +
+  scale_x_log10() +
+  theme_light()
+```
+:::  
+::: {.column width=50%}  
+
+```{r}
+plot(concrete_lasso_cv)
+```
+
+:::  
+
+::::  
+
+## Elastic Net  
+
+### Elastic Net is a combination of Ridge and Lasso regression. 
+
+$$
+\sum_{i=1}^{n} \left (y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right )^2 + \lambda \left ( \alpha \sum_{j=1}^{p} | \beta_j | + (1 - \alpha) \sum_{j=1}^{p} \beta_j^2 \right )
+$$
+
+where $\alpha$ controls the balance between Ridge and Lasso regression. 
+
+$\alpha = 1$ is Lasso regression and is the default in `glmnet`. $\alpha = 0$ is Ridge regression.
+
+
+## Assignment: Ridge Regression and the Lasso
+
+### ISLR Lab: 6.5.2 Ridge Regression and the Lasso  
+
+
+## Readings (1/2)
+
+### Dimension Reduction Methods  
+### Principal Components Regression    
+### Partial Least Squares  
+### Principal Components Regression  
+### Partial Least Squares  
+
+
+
+## Readings (2/2)
+
+### Considerations in High Dimensions 
+### High-Dimensional Data  
+### What Goes Wrong in High Dimensions?  
+### Regression in High Dimensions  
+### Interpreting Results in High Dimenions 
+
+
+
+
+
+# Moving Beyond Linearity {.theme-section}  
+
+## Polynomial Regression (1/)  
+
+We can extend linear regression to include polynomial terms where the coefficients are still linear, but the predictors are polynomial terms of the original predictors.
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \beta_2 x_i^2 + \ldots + \beta_d x_i^d + \epsilon_i
+$$
+
+In most cases, the value of $d$ is small, often 2 or 3 as higher values can lead to over fitting.  
+
+## Polynomial Regression (2/)  
+
+### Example 1: Quadratic Regression on Loadcell data
+
+```{r}
+#| code-fold: show
+
+loadcell <- read_table("datasets/LOADCELL.DAT", skip = 25, col_names = c("Load Level", "Response"))
+loadcell
+```
+
+## Polynomial Regression (3/)
+
+### Example 1: EDA of Loadcell data
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+loadcell |>
+  ggplot() +
+  geom_point(aes(x = `Load Level`, y = Response)) +
+  labs(
+    title = "Loadcell Data",
+    subtitle = "Data appears to have a linear relationship",
+    x = "Load Level",
+    y = "Response"
+  ) +
+  theme_light()
+```
+
+## Polynomial Regression (4/) {.smaller}  
+
+### Example 1: Quadratic Regression on Loadcell data
+
+```{r}
+#| code-fold: show  
+
+loadcell_lm <- lm(Response ~ `Load Level`, data = loadcell)
+summary(loadcell_lm)
+```
+
+<br>  
+
+**Note:** R-squared is 1!
+
+## Polynomial Regression (5/)  
+
+### Example 1: Inspect the resiuals 
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+loadcell_resid <- augment(loadcell_lm)
+loadcell_resid |> 
+  ggplot() +
+  geom_point(aes(x = `Load Level`, y = .resid)) +
+  labs(
+    title = "Loadcell Residuals from Simple Linear Regression",
+    subtitle = "Residuals are not randomly distributed",
+    x = "Load Level",
+    y = "Residuals"
+  ) +
+  theme_light()
+```
+
+## Polynomial Regression (6/) {.smaller}  
+
+### Example 1: Quadratic Regression on Loadcell data
+
+```{r}
+#| code-fold: show
+
+loadcell_lm_quad <- lm(Response ~ poly(`Load Level`, 2), data = loadcell)
+summary(loadcell_lm_quad)
+```
+
+## Polynomial Regression (7/)  
+
+### Example 1: Inspect the resiuals of the quadrtic model  
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| out-width: 600px
+
+set.seed(42) # added so jitter will not change between renders
+loadcell_resid_quad <- augment(loadcell_lm_quad)
+loadcell_resid_quad |> 
+  ggplot() +
+  geom_point(aes(x = loadcell$`Load Level`, y = .resid), 
+             position = position_jitter(width = 0.15),
+             shape = 1) +
+  labs(
+    title = "Loadcell Residuals from Quadratic Regression",
+    subtitle = "Residuals are randomly distributed",
+    x = "Load Level",
+    y = "Residuals"
+  ) +
+  theme_light()
+```
+
+## Polynomial Regression (8/) {.smaller}  
+
+### Example 1: Alternative method to construc the polynomial model  
+
+```{r}
+#| code-fold: show
+
+loadcell_lm_quad2 <- lm(Response ~ `Load Level` + I(`Load Level`^2), data = loadcell)
+summary(loadcell_lm_quad2)
+```
+
+
+
+## Assignment: Polynomial Regression 
+
+### ISLR Lab: 7.8.1 Polynomial Regression  
+
+
+
+
+
+
+
+
+
+
+#  {.theme-section visibility="uncounted"}
+
+<h1>End of Module 9</h1>
+
+## References
+
+::: {#refs}
+:::
+
+
+# Backup {.theme-section visibility="uncounted"}
+
+## Best Subset Selection (2/) {.smaller visibility="uncounted"}
+
+### Creating a function to do the best subset selection
+
+
+```{r}
+#| code-fold: show  
+
+subset_selection <- function(data, predictors, response, train_prop = 0.7, seed = 42) {
+  # Ensure inputs are correct
+  if (!is.data.frame(data)) {
+    stop("Input 'data' must be a data frame")
+  }
+  if (!is.character(predictors) || !all(predictors %in% names(data))) {
+    stop("Input 'predictors' must be a character vector of column names present in the data frame")
+  }
+  if (!is.character(response) || length(response) != 1 || !(response %in% names(data))) {
+    stop("Input 'response' must be a single column name present in the data frame")
+  }
+  
+  # Set seed for reproducibility
+  set.seed(seed)
+  
+  # Split data into training and test sets
+  train_indices <- sample(1:nrow(data), size = floor(train_prop * nrow(data)))
+  train_data <- data[train_indices, ]
+  test_data <- data[-train_indices, ]
+  
+  # Prepare the formula
+  formula <- as.formula(paste(response, "~", paste(predictors, collapse = " + ")))
+  
+  # Perform subset selection on training data
+  subsets <- regsubsets(formula, data = train_data, nvmax = length(predictors))
+  
+  # Extract results
+  summary_subsets <- summary(subsets)
+  
+  # Create a tibble with results
+  results <- tibble(
+    n_vars = 1:length(predictors),
+    adjr2 = summary_subsets$adjr2,
+    cp = summary_subsets$cp,
+    bic = summary_subsets$bic
+  )
+  
+  # Function to calculate test MSE
+  calculate_test_mse <- function(model, test_data, response) {
+    predictions <- predict(model, newdata = test_data)
+    mean((test_data[[response]] - predictions)^2)
+  }
+  
+  # Calculate test MSE for each model
+  test_mse <- sapply(1:length(predictors), function(i) {
+    coef_matrix <- coef(subsets, id = i)
+    variables <- names(coef_matrix)[-1]  # Exclude intercept
+    model <- lm(as.formula(paste(response, "~", paste(variables, collapse = "+"))), data = train_data)
+    calculate_test_mse(model, test_data, response)
+  })
+  
+  # Add test MSE to results
+  results <- results |> mutate(test_mse = test_mse)
+  
+  # Find best model for each criterion
+  best_adjr2 <- results |> slice_max(adjr2, n = 1)
+  best_cp <- results |> slice_min(cp, n = 1)
+  best_bic <- results |> slice_min(bic, n = 1)
+  best_test_mse <- results |> slice_min(test_mse, n = 1)
+  
+  # Combine results
+  best_models <- bind_rows(
+    best_adjr2 |> mutate(criterion = "Adjusted R-squared"),
+    best_cp |> mutate(criterion = "Mallows' Cp"),
+    best_bic |> mutate(criterion = "BIC"),
+    best_test_mse |> mutate(criterion = "Test MSE")
+  )
+  
+  # Return a list with full results and best models
+  list(
+    full_results = results,
+    best_models = best_models,
+    subsets = subsets,
+    train_data = train_data,
+    test_data = test_data
+  )
+}
+```
+
+## Best Subset Selection (4/)  
+
+### Perform best subset selection
+
+```{r}
+#| code-fold: show
+
+# subset_selection(concrete, columns[-9], "strength")
+```
