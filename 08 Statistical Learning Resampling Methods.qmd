@@ -577,7 +577,7 @@ auto_mpg_test_data |>
 ```
 :::
 
-## Example: Leave-One-Out Cross Validation (LOOCV) (1/) {.smaller}
+## Example: Leave-One-Out Cross Validation (LOOCV) (1/4) {.smaller}
 
 ::: columns
 ::: {.column width="50%"}
@@ -605,7 +605,7 @@ summary(auto_mpg_lm)
 
 WE perform linear regression using the `glm()` function rather than the `lm()` function because the former can be used together with `cv.glm()`. The `cv.glm()` function is part of the `boot` library (functions for bootstrapping).
 
-## Example: Leave-One-Out Cross Validation (LOOCV) (2/)
+## Example: Leave-One-Out Cross Validation (LOOCV) (2/4)
 
 ### Perform LOOCV using the `cv.glm()` function
 
@@ -626,7 +626,7 @@ $$
 CV_{(n)} = \frac{1}{n} \sum_{i=1}^{n} \text{MSE}_i
 $$
 
-## Example: Leave-One-Out Cross Validation (LOOCV) (3/)
+## Example: Leave-One-Out Cross Validation (LOOCV) (3/4)
 
 LOOCV is a general method and can be used with any kind of predictive modeling.
 
@@ -643,7 +643,7 @@ LOOCV is a general method and can be used with any kind of predictive modeling.
 
 -   Computationally expensive for large datasets.
 
-## Example: Leave-One-Out Cross Validation (LOOCV) (4/)
+## Example: Leave-One-Out Cross Validation (LOOCV) (4/4)
 
 ### Perform LOOCV over a range of polynomial degrees
 
