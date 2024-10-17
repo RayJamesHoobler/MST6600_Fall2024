@@ -1205,25 +1205,19 @@ summary(loadcell_lm_quad2)
 
 
 
-
-
-
-
-
-
 #  {.theme-section visibility="uncounted"}
 
 <h1>End of Module 9</h1>
 
-## References
+## References {visibility="uncounted"}
 
 ::: {#refs}
 :::
 
 
-# Backup {.theme-section visibility="uncounted"}
+# Backup {.theme-section visibility="hidden"}
 
-## Best Subset Selection (2/) {.smaller visibility="uncounted"}
+## Best Subset Selection (2/) {.smaller visibility="hidden"}
 
 ### Creating a function to do the best subset selection
 
@@ -1310,7 +1304,7 @@ subset_selection <- function(data, predictors, response, train_prop = 0.7, seed 
 }
 ```
 
-## Best Subset Selection (4/)  
+## Best Subset Selection (4/) {visibility="hidden"}
 
 ### Perform best subset selection
 
