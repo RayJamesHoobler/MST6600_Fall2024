@@ -546,10 +546,55 @@ sl_county_tracts_income |>
 
 ![ca. 1933 - 1939](https://www.docsteach.org//images/documents/122345110667/orig_122345110667_255328.jpg?v=SpYPrtLmr)
 
-## College Scorecard Dataset
+
+## Maps Assignment 
+
+For this assignment, we will summarize the mean debt of graduate student loans per state and display the data on a map of the U.S.
+
+You will need the College Scorecard dataset Most-Recent-Cohorts-Field-of-Study.csv and the Most-Recent-Cohorts-Institution.csv files.  
+
+We will go through the following steps in class:
+
+- Add directory information for each institution to the College Scorecard data frame  
+- Clean the data frame by removing the "Privacy Supressed" fields and converting needed columns from text to numbers  
+- Summarize the total debt by state  
+- Decide what additional information is needed to join the summary data to the map data files  
+- Create a choropleth map  
+
+ 
+Links:
+
+[College Scorecard Data](https://collegescorecard.ed.gov/data/){.external target="_blank"}
+
+[College Scorecard Documentation](https://collegescorecard.ed.gov/data/documentation/){.external target="_blank"}
+
+Download the "Most Recent Data by Field of Study.zip" and the "Data Dictionary"
+
+## College Scorecard Datasets
 
 ```{r}
-# college_scorecard <- read_csv("datasets/Most-Recent-Cohorts-Field-of-Study.csv")
-# college_scorecard
+#| code-fold: show
+
+college_scorecard_field_of_study <- read_csv("datasets/College_Scorecard_Raw_data_06102024/Most-Recent-Cohorts-Field-of-Study.csv")
 ```
+
+```{r}
+#| code-fold: show
+
+college_scorecard_field_of_study
+```
+
+```{r}
+#| code-fold: show
+
+college_scorecard_institution <- read_csv("datasets/College_Scorecard_Raw_data_06102024/Most-Recent-Cohorts-Institution.csv")
+```
+
+
+```{r}
+#| code-fold: show
+
+college_scorecard_institution
+```
+
 

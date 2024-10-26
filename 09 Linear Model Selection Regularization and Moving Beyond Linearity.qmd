@@ -621,7 +621,7 @@ $$
 ### Akaike Information Criterion (AIC):
 
 $$
-AIC = \frac{1}{n} (RSS + 2d\hat{\sigma}^2)
+\textrm{AIC} = n\log\left(\frac{\text{RSS}}{n}\right) + 2(d+2),
 $$
 
 ### Bayesian Information Criterion (BIC):
