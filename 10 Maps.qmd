@@ -250,21 +250,6 @@ plot_usmap(regions = "states") +
   labs(title = "US States")
 ```
 
-## Choropleth Maps (from **Claude.ai**)
-
-### what is the origin of the word choropleth?
-
-The word "choropleth" has an interesting etymology rooted in Greek. It's a compound word formed from two Greek elements:
-
-1. "Choro-" (χώρο-): This prefix comes from the Greek word "choros" (χώρος), which means "area" or "region."
-
-2. "-pleth" (-πλήθ): This suffix is derived from the Greek word "plethos" (πλῆθος), meaning "multitude" or "quantity."
-
-When combined, these elements create "choropleth," which essentially means "area quantity" or "region value." This name aptly describes the nature of choropleth maps, which display quantities or values across different geographic areas.
-
-The term "choropleth" was coined in 1938 by John Kirtland Wright, an American geographer. Wright introduced this term in his doctoral dissertation at Harvard University, titled "Notes on Statistical Mapping, With Special Reference to the Mapping of Population Phenomena."
-
-This relatively recent coinage explains why the term might seem unfamiliar to many people, despite the widespread use of choropleth maps in various fields today.
 
 ## Inspect the `us_map()` Data Frame  
 
@@ -581,7 +566,7 @@ college_scorecard_field_of_study <- read_csv("datasets/College_Scorecard_Raw_dat
 ```{r}
 #| code-fold: show
 
-college_scorecard_field_of_study
+dim(college_scorecard_field_of_study)
 ```
 
 ```{r}
@@ -594,7 +579,7 @@ college_scorecard_institution <- read_csv("datasets/College_Scorecard_Raw_data_0
 ```{r}
 #| code-fold: show
 
-college_scorecard_institution
+dim(college_scorecard_institution)
 ```
 
 

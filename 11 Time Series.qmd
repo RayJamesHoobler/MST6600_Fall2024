@@ -1,0 +1,288 @@
+---
+title: "Time Series"
+author: "Ray J. Hoobler"
+subtitle: "Module 11"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(fpp3) # 
+```
+
+## Resource for Time Series Models 
+
+:::: {.columns}  
+
+::: {.column width="50%"}  
+
+[NIST/SEMATECH e-Handbook of Statistical Methods](https://www.itl.nist.gov/div898/handbook/){target="_blank"} 
+
+![Ch 6.4 Time Series Models](https://www.itl.nist.gov/div898/handbook/gifs/hm2.gif){width=50%}  
+
+:::  
+
+::: {.column width="50%"}  
+
+[Forecasting: Principles and Practice](https://otexts.com/fpp3/){target="_blank"}
+
+![](https://otexts.com/fpp3/figs/fpp3_front_cover.jpg){width=50%}
+
+:::  
+
+:::: 
+
+## Definition of Time Series  
+
+::: {.fragment}  
+::: {.transparent}  
+::: {.r-stack}  
+
+An ordered sequence of values of a variable at equally spaced time intervals. 
+
+:::  
+:::  
+::: 
+
+::: {.fragment}  
+
+**From fpp3**: 
+
+Examples of time series data include:
+
+    Annual Google profits
+    Quarterly sales results for Amazon
+    Monthly rainfall
+    Weekly retail sales
+    Daily IBM stock prices
+    Hourly electricity demand
+    5-minute freeway traffic counts
+    Time-stamped stock transaction data
+
+Anything that is observed sequentially over time is a time series. 
+:::  
+
+## Moving Averages (1/)  
+
+```{r}
+supplier <- read_table(
+  "Supplier 	Cost 	Error 	ErrorSquared
+1 	9 	-1 	1
+2 	8 	-2 	4
+3 	9 	-1 	1
+4 	12 	2 	4
+5 	9 	-1 	1
+6 	12 	2 	4
+7 	11 	1 	1
+8 	7 	-3 	9
+9 	13 	3 	9
+10 	9 	-1 	1
+11 	11 	1 	1
+12 	10 	0 	0 ", col_names = TRUE
+)
+
+supplier
+```
+
+The **mean** cost is:   `r round(mean(supplier$Cost), 2)`.  
+The **SSE** is:         `r sum(supplier$ErrorSquared)`.  
+The **MSE** is:         `r round(mean(supplier$ErrorSquared), 2)`.  
+
+Is the *mean* a good estimate of the cost?  
+
+## Moving Averages (2/)  
+
+```{r}
+supplier |> 
+  ggplot(aes(x = Supplier, y = Cost)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(supplier$Cost), color = "red") +
+  theme_light()
+```
+
+
+## Moving Averages (2/)  
+
+```{r}
+pc_ebt <- read_table(
+  "Year 	Earnings_M 	Mean 	Error 	Squared_Error
+1985 	46.163 	48.676 	-2.513 	6.313
+1986 	46.998 	48.676 	-1.678 	2.814
+1987 	47.816 	48.676 	-0.860 	0.739
+1988 	48.311 	48.676 	-0.365 	0.133
+1989 	48.758 	48.676 	0.082 	0.007
+1990 	49.164 	48.676 	0.488 	0.239
+1991 	49.548 	48.676 	0.872 	0.761
+1992 	48.915 	48.676 	0.239 	0.057
+1993 	50.315 	48.676 	1.639 	2.688
+1994 	50.768 	48.676 	2.092 	4.378", col_names = TRUE
+)
+
+pc_ebt
+```
+
+The **mean** Earnings (\$M) is:   `r round(mean(pc_ebt$Earnings_M), 2)`.  
+The **SSE** is:               `r sum(pc_ebt$Squared_Error)`.  
+The **MSE** is:               `r round(mean(pc_ebt$Squared_Error), 2)`.  
+
+Is the *mean* a good estimate of the Earnings?  
+
+### Moving Averages (3/)  
+
+### Plot of earnings over tiem 
+
+```{r}
+pc_ebt |> 
+  ggplot(aes(x = Year, y = Earnings_M)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(pc_ebt$Earnings_M), color = "red") +
+  theme_light()
+```
+
+
+## Moving Averages (4/) 
+
+```{r}
+quarterly_sales <- read_table(
+  "Year     Quarter     Period     Sales
+90     1      1     362
+90     2      2     385
+90     3      3     432
+90     4      4     341
+91     1      5     382
+91     2      6     409
+91     3      7     498
+91     4      8     387
+92     1      9     473
+92     2     10     513
+92     3     11     582
+92     4     12     474
+93     1     13     544
+93     2     14     582
+93     3     15     681
+93     4     16     557
+94     1     17     628
+94     2     18     707
+94     3     19     773
+94     4     20     592
+95     1     21     627
+95     2     22     725
+95     3     23     854
+95     4     24     661", col_names = TRUE
+)
+
+quarterly_sales
+```
+
+
+## Moving Averages (5/)
+
+```{r}
+quarterly_sales |> 
+  ggplot(aes(x = Period, y = Sales)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(quarterly_sales$Sales), color = "red") +
+  theme_light()
+```
+
+## Univariate Time Series  
+
+### Monthly $\textrm{CO}_2$ Concentrations
+
+```{r}
+co2
+```
+
+
+
+# In Practice {.theme-section}
+
+## Real World Example: SEMI Forecasting 
+
+[Global Silicon Wafer Shipments](https://www.semi.org/en/news-media-press-releases/semi-press-releases/global-silicon-wafer-shipments-to-remain-soft-in-2024-before-strong-expected-rebound-in-2025-SEMI-reports)
+
+Units are in "million square inches (MSI)"
+
+```{r}
+msi_historical <- read_tsv("datasets/MSI.txt", col_names = c("year", "Q1", "Q2", "Q3", "Q4"))
+msi_historical
+```
+
+## Wrangle the Data into a Long Format (1/)
+
+|year|quarter|msi|
+|----|-------|---|
+|2001|Q1|1250|
+|2001|Q2|988|
+|...|...|...|
+
+### And convert to a time series object (tsibble)
+
+```{r}
+msi_ts <- msi_historical |> 
+  pivot_longer(cols = -year, names_to = "quarter", values_to = "quarter_value", ) |> 
+  separate_wider_delim(cols = quarter_value, names = c("quarter_2", "msi"), delim = " ") |> 
+  mutate(msi = as.numeric(str_remove(msi, ","))) |> 
+  select(-quarter_2) |> 
+  mutate(year_quarter = str_c(year, " ", quarter)) |> 
+  select(year_quarter, msi) |> 
+  mutate(year_quarter = yearquarter(year_quarter)) |> 
+  as_tsibble(index = year_quarter)
+
+msi_ts
+```
+
+## Plot the Time Series
+
+```{r}
+msi_ts |> 
+  autoplot(msi)
+```
+
+```{r}
+msi_ts |> 
+  gg_season(msi)
+```
+
+
+```{r}
+msi_ts |> 
+  gg_lag(msi, geom = "point")
+```
+
+```{r}
+msi_ts |> 
+  ACF(msi) |> 
+  autoplot()
+```
+
