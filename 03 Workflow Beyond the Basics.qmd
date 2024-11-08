@@ -1,0 +1,1069 @@
+---
+title: "Workflow: Code Style, Data Tidying, Workflow: Scripts and Projects, Data Import, Workflow: getting help"
+subtitle: "Module 03"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---  
+
+
+# Workflow: Beyond the Basics {.theme-section}
+
+## Libraries Used in this Presentation
+
+:::: {.columns}  
+
+::: {.column width=50%}
+
+```{r}
+#| code-fold: show
+library(tidyverse)
+library(palmerpenguins)
+library(nycflights13)
+```
+
+:::  
+
+::::  
+
+# Workflow: code style {.theme-section}
+
+
+## Names  
+:::: {.columns}  
+::: {.column width=35%}
+Variable names (those created by <- and those created by mutate()) should use only lowercase letters, numbers, and \_.  
+
+Use \_ to separate words within a name.
+
+:::  
+
+::: {.column width=65%}  
+::: {.fragment}  
+
+```{r}
+#| code-fold: show
+
+body_mass_mean <- mean(penguins$body_mass_g, na.rm = TRUE)
+body_mass_mean
+```
+
+<br>
+
+```{r}
+#| code-fold: show
+
+body_mass_sd <- sd(penguins$body_mass_g, na.rm = TRUE)
+body_mass_sd
+```
+
+:::  
+:::  
+
+::::  
+
+::: {.callout-tip .fragment}
+Use "long, descriptive names that are easy to understand rather than concise names that are fast to type."
+:::
+
+
+## Spaces (R4DS 2e 4.2)
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+Put spaces on either side of mathematical operators apart from ^ (i.e. +, -, ==, <, …), and around the assignment operator (<-).
+
+```{r}
+#| eval: false
+#| code-fold: show
+# Strive for
+z <- (a + b)^2 / d
+
+# Avoid
+z<-( a + b ) ^ 2/d
+```
+
+:::  
+
+::: {.column width=50%}  
+Don’t put spaces inside or outside parentheses for regular function calls. Always put a space after a comma, just like in standard English.
+
+```{r}
+#| eval: false
+#| code-fold: show
+# Strive for
+mean(x, na.rm = TRUE)
+
+# Avoid
+mean (x ,na.rm=TRUE)
+```
+
+:::
+
+:::: 
+
+::: {.callout-note .fragment}
+Python code style guide: PEP 8, has similar recommendations for spaces; however, it recommends not using space around the `=` sign when used to indicate a keyword argument or a default parameter value.
+:::  
+
+## Spaces (R3DS 2e 4.2, cont.)  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+::: {.fragment}  
+
+```{r}
+#| eval: false
+#| code-fold: show
+flights |> 
+  mutate(
+    speed      = distance / air_time,
+    dep_hour   = dep_time %/% 100,
+    dep_minute = dep_time %%  100
+  )
+```
+
+:::  
+:::  
+::: {.column width=50%}
+::: {.fragment}  
+
+```{r}
+#| eval: false
+#| code-fold: show
+flights |>
+  mutate(
+    speed = distance / air_time,
+    dep_hour = dep_time %/% 100,
+    dep_minute = dep_time %% 100
+  )
+```
+
+:::  
+:::  
+::::  
+
+<br>
+
+::: {.transparent .r-stack .fragment}
+Using line returns (after the comma) to separate arguments in a function call is a good practice.
+:::  
+
+## Pipes (1/4)
+
+### Examples from R4DS (2e)
+
+|> should always have a space before it and should typically be the last thing on a line.
+
+```{r}
+#| eval: false
+#| code-fold: show
+# Strive for 
+flights |>  
+  filter(!is.na(arr_delay), !is.na(tailnum)) |> 
+  count(dest)
+
+# Avoid
+flights|>filter(!is.na(arr_delay), !is.na(tailnum))|>count(dest)
+```
+
+## Pipes (2/4)
+
+>If the function you’re piping into has named arguments (like mutate() or summarize()), put each argument on a new line. If the function doesn’t have named arguments (like select() or filter()), keep everything on one line unless it doesn’t fit, in which case you should put each argument on its own line.
+
+```{r}
+#| eval: false
+#| code-fold: show
+# Strive for
+flights |>  
+  group_by(tailnum) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+
+# Avoid
+flights |>
+  group_by(
+    tailnum
+  ) |> 
+  summarize(delay = mean(arr_delay, na.rm = TRUE), n = n())
+```
+
+## Pipes (3/4)  
+
+:::: {.columns}  
+
+::: {.column width=30%}
+
+>After the first step of the pipeline, indent each line by two spaces. RStudio will automatically put the spaces in for you after a line break following a |> . If you’re putting each argument on its own line, indent by an extra two spaces. Make sure ) is on its own line, and un-indented to match the horizontal position of the function name.
+:::  
+
+::: {.column width=70%}  
+
+```{r}
+#| eval: false
+#| code-fold: show
+# Strive for 
+flights |>  
+  group_by(tailnum) |> 
+  summarize(
+    delay = mean(arr_delay, na.rm = TRUE),
+    n = n()
+  )
+
+# Avoid
+flights|>
+  group_by(tailnum) |> 
+  summarize(
+             delay = mean(arr_delay, na.rm = TRUE), 
+             n = n()
+           )
+
+# Avoid
+flights|>
+  group_by(tailnum) |> 
+  summarize(
+  delay = mean(arr_delay, na.rm = TRUE), 
+  n = n()
+  )
+```  
+
+:::  
+
+::::  
+
+## Pipes (4/4)
+
+>It’s OK to shirk some of these rules if your pipeline fits easily on one line. But in our collective experience, it’s common for short snippets to grow longer, so you’ll usually save time in the long run by starting with all the vertical space you need.
+
+```{r}
+#| eval: false
+#| code-fold: show
+# This fits compactly on one line
+df |> mutate(y = x + 1)
+
+# While this takes up 4x as many lines, it's easily extended to 
+# more variables and more steps in the future
+df |> 
+  mutate(
+    y = x + 1
+  )
+```  
+
+## ggplot2  
+
+>The same basic rules that apply to the pipe also apply to ggplot2; just treat + the same way as |>.
+>- R4DS (2e)
+
+
+## Sectioning comments  
+
+::: {.transparent .r-stack .fragment}
+Because I work almost exclusively in markdown, headers serve the same function as sectioning comments in R scripts. 
+:::  
+
+<br>
+
+::: {.callout-tip .fragment}    
+Demonstrate the use of named code chunks (blocks) in Quarto.
+::: 
+
+## Exercise
+
+Module 3 Exercise 1
+
+[4.6 Exercises](https://r4ds.hadley.nz/workflow-style#exercises)  
+
+1. Restyle the following pipelines following the guildelines.
+
+```{r exercsie4-6-1}
+#| eval: false
+#| code-fold: show
+
+flights|>filter(dest=="IAH")|>group_by(year,month,day)|>summarize(n=n(),
+delay=mean(arr_delay,na.rm=TRUE))|>filter(n>10)
+
+flights|>filter(carrier=="UA",dest%in%c("IAH","HOU"),sched_dep_time>
+0900,sched_arr_time<2000)|>group_by(flight)|>summarize(delay=mean(
+arr_delay,na.rm=TRUE),cancelled=sum(is.na(arr_delay)),n=n())|>filter(n>10)
+```
+
+
+# Data Tidying {.theme-section}
+
+## Introduction
+
+::: {.fragment}  
+>Happy families are all alike; every unhappy family is unhappy in its own way.  
+— Leo Tolstoy
+
+:::  
+::: {.fragment}  
+>Tidy datasets are all alike, but every messy dataset is messy in its own way.  
+— Hadley Wickham
+
+:::  
+
+
+## Tidy Data  
+
+![](https://r4ds.hadley.nz/images/tidy-1.png)
+
+## Tidy Data Example 1
+
+Tidy or not tidy? (How would you do a statistical analysis?)
+
+```{r}
+#| code-fold: show
+
+iris
+```
+
+
+
+## Tidy Data Example 2  
+
+Tidy or not tidy?
+
+```{r}
+#| code-fold: show
+
+penguins
+```
+
+## Tidy Data Example 3
+
+Tidy or not tidy?
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+table1
+```
+
+:::
+::: {.column width=50%}  
+
+```{r}
+table2
+```
+
+:::  
+
+::::  
+
+## Tidy Data Example 4  
+
+Tidy or not tidy?  
+
+```{r}
+table3
+```  
+
+
+## Tidy Data Example 5  
+
+Tidy or not tidy?  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+table4a
+```
+
+:::  
+
+::: {.column width=50%}  
+
+```{r}
+table4b
+```
+
+:::  
+
+::::  
+
+## Exercise  
+
+Chapter 5 Data Tidying
+  Tidy Data 5.2.1 Exercises (at home)
+
+Written (short answers) assignment.
+
+## Reshaping Data  
+
+**Question:**  If tidy data is so good, why do we encounter so many untidy datasets?  
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+
+::: {.fragment fragment-index=1}  
+1. Data is structured for data entry or human readability.  
+2. Most people simply haven't been introduced to the concept (and benifits) of tidy data.  
+:::  
+
+::: {.fragment fragment-index=3}  
+::: {.callout-note}  
+
+We will use the `pivot_wider()` and `pivot_longer()` functions to tidy data; however, you need to be familiar with past functions that have been used to "reshape" data as they are commonly found in the wild.
+:::  
+:::  
+
+:::  
+
+::: {.column width=70%}  
+
+::: {.fragment fragment-index=2}  
+### Libraries (previously) used to "reshape" data  
+
+- **reshape**  
+   - `cast()`  
+   - `melt()` 
+- **reshape2** (A reboot of the Reshape Package by Hadley Wickham)  
+  - `cast()` 
+  - `melt()`  
+- **dplyr**  
+  - `spread()` *superseded*
+  - `gather()` *superseded*
+  - **`pivot_wider()`**  
+  - **`pivot_longer()`**  
+
+:::  
+:::  
+
+::::  
+
+## Why do we need new functions?  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+>For some time, it’s been obvious that there is something fundamentally wrong with the design of `spread()` and `gather()`. Many people don’t find the names intuitive and find it hard to remember which direction corresponds to spreading and which to gathering. 
+>  
+>It also seems surprisingly hard to remember the arguments to these functions, meaning that many people **(including me!)** have to consult the documentation every time.  
+-[Pivoting](https://tidyr.tidyverse.org/articles/pivot.html)  
+
+:::  
+
+::::  
+
+## Lengthening Data (1/2)  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show 
+
+table4a
+```
+
+Note: The values are for TB "cases" from the World Health Organization.  
+
+:::  
+
+::: {.column width=50%}  
+::: {.fragment}  
+The values for year, should be a variable in the column if we want to create a tidy dataset.  
+
+We can use the `pivot_longer()` function to lengthen the data.  
+:::  
+::: 
+
+::::  
+
+## Lengthening Data (2/2)
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### Using `pivot_longer()`  
+::: {.fragment}  
+
+```{r}
+#| code-fold: show
+
+table4a_long <- table4a |>
+  pivot_longer(
+    cols = c('1999', '2000'),
+    names_to = 'year',
+    values_to = 'cases'
+  )
+table4a_long
+```
+:::  
+:::  
+::: {.column width=50%}  
+
+### Creating a summary table  
+
+::: {.fragment}  
+
+```{r}  
+#| code-fold: show
+
+table4a_long |>
+  group_by(country) |>
+  summarize(
+    total_cases = sum(cases, na.rm = TRUE), 
+    mean_cases = mean(cases, na.rm = TRUE)
+    ) |> 
+  ungroup()
+```  
+
+:::  
+:::  
+
+::::  
+
+## Widening Data (1/2)    
+
+### Why would we ever need to "widen" the data?
+
+:::  {.fragment}
+Sometime you need a human readable table!  
+:::  
+
+:::: {.columns}  
+
+::: {.column width=60%}  
+::: {.fragment}  
+The `pivot_wider()` function is used to widen the data.  
+
+```{r}
+#| code-fold: show
+
+table4a_long |>
+  pivot_wider(
+    names_from = year,
+    values_from = cases
+  )
+```  
+
+:::  
+:::  
+
+::::  
+
+# Workflow: scripts and projects {.theme-section}
+
+## Scripts vs. Quarto (R Markdown)  
+
+:::: {.columns}  
+
+::: {.column width=50%} 
+ 
+### Scripts 
+::: {.fragment} 
+When to use script:  
+
+- When you have a series of commands that you want to run together.
+- When you want to save the commands for later use.
+- When you want to share the commands with others.
+:::  
+:::  
+::: {.column width=50%}
+
+### Quarto (R Markdown)  
+::: {.fragment}  
+- R Markdown is a variant of Markdown that allows R code to be embedded in the document.  
+- R Markdown documents are fully reproducible and support dozens of static and dynamic output formats.  
+- R Markdown documents are particularly useful because they can be easily shared with others.  
+:::  
+:::  
+
+::::  
+
+## Projects  
+
+### Single piece of advice  
+::: {.fragment}  
+:::: {.columns}  
+
+::: {.column width=30%}  
+When you start a new project, create a new project folder and work from that folder.
+:::  
+::: {.column width=70%}  
+```{dot}
+//| fig-width: 5 
+//| fig-height: 5
+
+digraph {
+  rankdir=TB;
+  node [shape=folder, style="filled", fillcolor="#ECECEC", fontsize=10, width=0.5, height=0.3, margin="0.1,0.1"];
+  edge [arrowhead=none, penwidth=0.5];
+  
+  Project [label="Project Folder"];
+  Data [label="datasets"];
+  Scripts [label="docs"];
+  Output [label="images"];
+  
+  Project -> Data;
+  Project -> Scripts;
+  Project -> Output;
+  
+  {rank=same; Data; Scripts; Output}
+}
+```
+:::  
+
+::::  
+
+:::  
+
+# Data import {.theme-section}
+
+## Reading Data Files: CSV
+
+```{r}
+#| code-fold: show
+
+# Create a CSV file from the iris dataset
+write_csv(iris, "datasets/iris.csv")
+
+# Read the CSV file
+iris_csv <- read_csv("datasets/iris.csv")
+iris_csv
+```
+
+### Open the CSV file for review.
+
+
+## Read Tab Separated Value (TSV) Files
+
+```{r}
+#| code-fold: show
+
+# Create a TSV file from the iris dataset
+write_tsv(iris, "datasets/iris.tsv")
+
+# Read the TSV file
+iris_tsv <- read_tsv("datasets/iris.tsv")
+iris_tsv
+
+```
+
+### Open the TSV file for review.  
+
+## Read "Text" Files
+
+[NIST e-Handbook of Statistical Methods datasets](https://www.itl.nist.gov/div898/handbook/datasets.htm)
+
+```{r}
+#| code-fold: show
+
+# Read the LITHOGRA.DAT file
+litho <- read_table("datasets/LITHOGRA.DAT", skip = 25, col_names = FALSE)
+litho
+
+```
+
+## Adding colunmn names while loading the file  
+
+```{r}
+#| code-fold: show
+
+column_names = c("CASSETTE WAFER SITE LINEWIDT RUNSEQ")
+column_names = str_split(column_names, " ") |> 
+  unlist()  |>
+  str_to_lower()
+
+column_names
+
+litho <- read_table("datasets/LITHOGRA.DAT", skip = 25, col_names = column_names)
+litho
+```
+
+### Open the LITHOGRA.DAT file for review.  
+
+## Controlling Column Types (1/5)   
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: true 
+machine_colums = c("MACHINE DAY TIME SAMPLE DIAMETER") |> 
+  str_split(" ") |>
+  unlist() |>
+  str_to_lower()
+
+machine <- read_table("datasets/MACHINE.DAT", skip = 25, col_names = machine_colums) 
+machine
+```
+
+:::  
+::: {.column width=50%}
+
+### From the file: 
+
+Number of observations = 180  
+Number of observations per line image = 5  
+Order of variables on a line image:   
+
+1. Factor Variable MACHINE      = Machine Number  
+2. Factor Variable DAY          = Day  
+3. Factor Variable TIME         = 1 = AM, 2 = PM  
+4. Factor Variable SAMPLE       = Sample Number  
+5. Dependent Variable DIAMETER  = DIAMETER  
+
+Anything that is ordered and could be a character string should be a factor.
+
+:::  
+
+::::  
+
+## Controlling Column Types (2/5) 
+
+### From the `read_` statement 
+
+```{r}
+#| code-fold: show 
+#| code-line-numbers: "|4|"
+
+machine <- read_table("datasets/MACHINE.DAT", 
+                      skip = 25, 
+                      col_names = machine_colums, 
+                      col_types = "ffffd")
+machine
+```
+
+## Controlling Column Types (3/5)  
+
+### Using `mutate()` 
+
+```{r}
+#| code-fold: show
+#| code-line-numbers: "|2-7|"
+
+machine_as_factors <- machine |>
+  mutate(
+    machine = as_factor(machine),
+    day = as_factor(day),
+    time = as_factor(time),
+    sample = as_factor(sample)
+  )
+machine_as_factors
+```
+
+## Conrtolling Column Types (4/5) 
+
+### Using `factor()` within `mutate()`  
+
+```{r}
+#| code-fold: show
+#| code-line-numbers: "|2-10|"
+
+machine_factor <- machine |>
+  mutate(
+    machine = factor(machine, ordered = FALSE,
+                     levels = c(1, 2, 3), 
+                     labels = c("x2398", "x0023", "z1000")),
+    day = factor(day, ordered = TRUE,
+                 levels = c(1, 2, 3), labels = c("Mon", "Tue", "Wed")),
+    time = factor(time, ordered = TRUE,
+                  levels = c(1, 2), labels = c("AM", "PM"))
+    )
+
+machine_factor
+```
+
+## Controlling Column Types (5/5)
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+### Why do all this work?  
+Plot of `machine` data 
+:::  
+
+::: {.column width=70%}  
+::: {.fragment}  
+
+```{r}
+#| code-fold: true
+#| fig-height: 4
+#| fig-width: 6
+#| out-height: 400px 
+#| out-width: 600px
+
+machine_factor |>
+  ggplot(aes(x = machine, y = diameter, color = machine)) +
+  geom_point(position = position_jitter(0.1), show.legend = FALSE) +
+  geom_hline(yintercept = 0.125, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = c(0.128, 0.122), linetype = "dashed", color = "red") +
+  facet_wrap(vars(time)) +
+  labs(
+    title = "Review of Tool Performance",
+    subtitle = "Tool z1000 performance on AM shift is underperforming\nTool x0023 needs centering adjustment",
+    x = "Machine Number",
+    y = "Diameter (inches)",
+    caption = "Source: MACHINE.DAT"
+  ) +
+  scale_y_continuous(limits = c(0.12, 0.13), breaks = seq(0.12, 0.13, 0.0025)) +
+  theme_linedraw()
+```
+
+:::  
+:::  
+
+::::  
+
+## Read Excel Files 
+
+Review the **Import Dataset** wizard in RStudio.  
+Requires the `readxl` library.  
+
+::: {.r-stack}
+
+![](https://readxl.tidyverse.org/logo.png) 
+
+::: 
+
+Review "Analyzer study from XW.xlsx"
+
+## Reading Data from Multiple Files (1/2)
+
+### By creating a vector of file names  
+
+```{r}
+#| code-fold: show
+
+water_use_file_names <- c(
+  "datasets/water_use_utah.tsv", 
+  "datasets/water_use_west_virginia.tsv"
+  )
+
+water_use_all_method_1 <- read_tsv(water_use_file_names, skip = 2, comment="#")
+water_use_all_method_1
+```
+
+## Reading Data from Multiple Files (2/2)  
+
+### Automating the tasks 
+
+Using the base R function, `list.files()`
+
+```{r}
+#| code-fold: show
+
+water_use_find_files <- list.files("datasets", 
+                                   pattern = "water_use_([A-Za-z_]+).tsv",
+                                   full.names = TRUE) 
+# escape character \. not needed (not a true regex)
+
+water_use_all_method_2 <- read_tsv(water_use_find_files, skip = 2, comment="#")
+water_use_all_method_2
+```
+
+## Writing to a  File (1/2)
+
+Take the dataframe and write to a file
+
+- `write_csv()`
+- `write_tsv()`
+- `write_table()`
+- `write_xlsx()`
+
+Good practice to look at the documentation for each function.
+
+## Writing to a File (2/2 ?write_csv)
+
+```{}  
+write_delim {readr}	R Documentation
+
+Write a data frame to a delimited file
+
+Description
+
+The ⁠write_*()⁠ family of functions are an improvement to analogous function such as write.csv() because they are approximately twice as fast. Unlike write.csv(), these functions do not include row names as a column in the written file. A generic function, output_column(), is applied to each variable to coerce columns to suitable output.
+
+Usage
+write_delim(
+  x,
+  file,
+  delim = " ",
+  na = "NA",
+  append = FALSE,
+  col_names = !append,
+  quote = c("needed", "all", "none"),
+  escape = c("double", "backslash", "none"),
+  eol = "\n",
+  num_threads = readr_threads(),
+  progress = show_progress(),
+  path = deprecated(),
+  quote_escape = deprecated()
+)
+
+write_csv(
+  x,
+  file,
+  na = "NA",
+  append = FALSE,
+  col_names = !append,
+  quote = c("needed", "all", "none"),
+  escape = c("double", "backslash", "none"),
+  eol = "\n",
+  num_threads = readr_threads(),
+  progress = show_progress(),
+  path = deprecated(),
+  quote_escape = deprecated()
+)
+
+.
+.
+.
+
+Arguments
+x	
+A data frame or tibble to write to disk.
+
+file	
+File or connection to write to.
+
+delim	
+Delimiter used to separate values. Defaults to " " for write_delim(), "," for write_excel_csv() and ";" for write_excel_csv2(). Must be a single character.
+
+na	
+String used for missing values. Defaults to NA. Missing values will never be quoted; strings with the same value as na will always be quoted.
+
+append	
+If FALSE, will overwrite existing file. If TRUE, will append to existing file. In both cases, if the file does not exist a new file is created.
+
+col_names	
+If FALSE, column names will not be included at the top of the file. If TRUE, column names will be included. If not specified, col_names will take the opposite value given to append.
+
+quote	
+How to handle fields which contain characters that need to be quoted.
+
+needed - Values are only quoted if needed: if they contain a delimiter, quote, or newline.
+
+all - Quote all fields.
+
+none - Never quote fields.
+
+escape	
+The type of escape to use when quotes are in the data.
+
+double - quotes are escaped by doubling them.
+
+backslash - quotes are escaped by a preceding backslash.
+
+none - quotes are not escaped.
+
+eol	
+The end of line character to use. Most commonly either "\n" for Unix style newlines, or "\r\n" for Windows style newlines.
+
+num_threads	
+Number of threads to use when reading and materializing vectors. If your data contains newlines within fields the parser will automatically be forced to use a single thread only.
+
+progress	
+Display a progress bar? By default it will only display in an interactive session and not while knitting a document. The display is updated every 50,000 values and will only display if estimated reading time is 5 seconds or more. The automatic progress bar can be disabled by setting option readr.show_progress to FALSE.
+
+path	
+[Deprecated] Use the file argument instead.
+
+quote_escape	
+[Deprecated] Use the escape argument instead.
+```  
+
+
+
+## Manual Data Frames 
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+### `tibble()` (aka a data frame)
+
+```{r}
+#| code-fold: show
+
+my_tibble_1 <- tibble(
+  x = 1:5,
+  y = c("a", "b", "c", "d", "e"),
+  z = c(TRUE, FALSE, TRUE, FALSE, TRUE)
+)
+
+
+
+
+my_tibble_1
+```
+
+:::  
+::: {.column width=50%}  
+
+### `tribble()` (**tr**ansposed tibble)
+
+```{r}
+#| code-fold: show
+
+my_tibble_2 <- tribble(
+  ~x, ~y, ~z,
+  1, "a", TRUE,
+  2, "b", FALSE,
+  3, "c", TRUE,
+  4, "d", FALSE,
+  5, "e", TRUE
+)
+
+my_tibble_2
+```
+
+:::  
+
+::::  
+
+# Workflow: getting help {.theme-section}  
+
+- Google (. . . is your friend---most of the time.)  
+- Stack Overflow (Before GenAI, this was the *go to* place for help.)  
+- GenAI (ChatGPT, Claude, **GitHub Copilot**, etc., but be careful.)
+
+
+
+# {.theme-section visibility=uncounted}  
+
+<h1>End of Module 3</h1>  
+
+## References 
+
+::: {#refs}
+:::  

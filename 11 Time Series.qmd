@@ -1,0 +1,1243 @@
+---
+title: "Working Dates, Time Series, and Forecasting"
+author: "Ray J. Hoobler"
+subtitle: "Module 11"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: show  
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(fpp3) # Forecasting: Principles and Practice aligned with Tidyverse
+```
+
+## Resource for Working with Dates  
+
+::: {.r-stack}  
+
+![Chapter 17](https://r4ds.hadley.nz/cover.jpg){width=80%}  
+
+:::  
+
+## Resources for Time Series Models 
+
+:::: {.columns}  
+
+::: {.column width="50%"}  
+
+[NIST/SEMATECH e-Handbook of Statistical Methods](https://www.itl.nist.gov/div898/handbook/){target="_blank"} 
+
+![Ch 6.4 Time Series Models](screenshots/NIST book cover.gif){width=50%}  
+
+:::  
+
+::: {.column width="50%"}  
+
+[Forecasting: Principles and Practice](https://otexts.com/fpp3/){target="_blank"}
+
+![](https://otexts.com/fpp3/figs/fpp3_front_cover.jpg){width=50%}
+
+
+:::  
+
+:::: 
+
+# Dates {.theme-section}  
+
+## Dates in R  
+
+Current standard for working with dates: **ISO8601**  
+
+##  Historical approaches to date handling in R (with help from Claude.ai)  
+
+1. Date class (introduced in R 1.0.0)  
+
+The original Date class stored dates as number of days since 1970-01-01  
+```{r}
+date_old <- as.Date("2024-01-01")
+print(as.numeric(date_old))  # Days since epoch
+```
+
+2. POSIXct format (Pre-ISO 8601 standard)  
+
+Stored as seconds since 1970-01-01  
+```{r}
+old_date_ct <- as.POSIXct("2024-01-01 12:00:00")
+print(as.numeric(old_date_ct))  # Seconds since epoch
+```
+
+
+3. POSIXlt format (list-based representation)  
+
+```{r}
+old_date_lt <- as.POSIXlt("2024-01-01 12:00:00")
+str(unclass(old_date_lt))  # Shows internal structure
+```
+
+
+## Common historical date formats and parsing methods
+
+```{r}
+dates <- c(
+    "01/02/03",           # Ambiguous MM/DD/YY
+    "01-02-2003",         # DD-MM-YYYY or MM-DD-YYYY
+    "January 2, 2003",    # Month name format
+    "2003.01.02"          # Period-separated
+)
+```
+
+
+## Historical parsing approaches
+
+`strptime()` - Traditional parsing method
+```{r}
+strptime(dates[1], "%m/%d/%y")
+strptime(dates[2], "%d-%m-%Y")
+strptime(dates[3], "%B %d, %Y")
+```
+
+
+`as.Date()` with format specification  
+```{r}
+as.Date(dates[1], format="%m/%d/%y")
+as.Date(dates[2], format="%d-%m-%Y")
+```
+
+
+## Handling different locales (pre-standardization)
+```{r}
+Sys.setlocale("LC_TIME", "C")  # POSIX locale
+format(as.Date("2024-01-01"), "%a %b %d %Y")
+```
+
+
+```{r}
+Sys.setlocale("LC_TIME", "en_US.UTF-8")  # US locale
+format(as.Date("2024-01-01"), "%a %b %d %Y")
+```
+
+
+##  Historical challenges with time zones
+
+Pre-ISO 8601, timezone handling was less standardized
+```{r}
+ct_ny <- as.POSIXct("2024-01-01 12:00:00", tz="America/New_York")
+ct_utc <- as.POSIXct("2024-01-01 12:00:00", tz="UTC")
+print(difftime(ct_ny, ct_utc))
+```
+
+
+## Demonstrating historical ambiguity issues  
+
+```{r}
+ambiguous_date <- "03/04/05"
+```
+
+
+Could be interpreted multiple ways:
+```{r}
+as.Date(ambiguous_date, format="%m/%d/%y")  # US interpretation
+as.Date(ambiguous_date, format="%d/%m/%y")  # European interpretation
+as.Date(ambiguous_date, format="%y/%m/%d")  # ISO-like interpretation
+```
+
+## Modern date handling in R (with help from Claude.ai)
+
+The current ISO 8601 standard in R offers several key advantages:
+
+::: {.fragment}  
+1. Unambiguous Format:
+   - Uses YYYY-MM-DD as the base format
+   - Eliminates confusion between US and European date formats
+   - Supports both date and time with timezone information
+
+:::  
+
+::: {.fragment}  
+2. Key Features:
+   - Hierarchical ordering (largest to smallest units)
+   - Optional time components with T separator
+   - Standardized timezone offsets
+   - Support for weeks and ordinal dates  
+
+:::
+::: {.fragment}  
+3. Main Benefits:
+   - Machine-readable
+   - Sorts correctly as text
+   - Internationally recognized
+   - Reduces parsing errors  
+
+:::  
+::: {.fragment}  
+
+4. Best Practices:
+   - Store dates in UTC
+   - Use local timezones only for display
+   - Always include timezone information for datetime values
+   - Use the lubridate package for easier handling
+
+:::  
+
+
+## Reading Dates in the Tidyverse 
+
+Here, the date is still being read as a character string.  
+
+```{r}
+# A simple data frame with dates 
+dates_df <- tibble(
+    date = c("2024-01-01", "2024-02-01", "2024-03-01"),
+    value = c(1, 2, 3)
+)
+
+dates_df
+```
+
+## Reading Dates from a CSV File 
+
+The `read_csv()` function from the `readr` package will automatically parse dates.  
+
+```{r}
+dates_df |> 
+  write_csv("datasets/dates.csv")
+
+read_csv("datasets/dates.csv")
+```
+
+## Coercing Dates in the Tidyverse 
+
+We can use the `lubridate` package to coerce the date column to a date object.  
+
+```{r}
+dates_df2 <- dates_df |> 
+  mutate(date = as_date(date)) # as_date() is part of the lubridate package 
+
+dates_df2
+```
+
+## `ggplot2` Recogizes Dates 
+
+We can then format them as needed.  
+
+:::: {.columns}  
+
+::: {.column width="50%"}  
+
+```{r}
+#| code-fold: true
+#| fig-width: 4
+#| fig-height: 4
+#| out-width: 400px
+
+dates_df2 |> 
+  ggplot(aes(x = date, y = value)) +
+  geom_line() +
+  geom_point() +
+  theme_light()
+```
+
+:::  
+::: {.column width="50%"}  
+
+```{r}
+#| code-fold: true
+#| fig-width: 4
+#| fig-height: 4
+#| out-width: 400px
+
+dates_df2 |> 
+  ggplot(aes(x = date, y = value)) +
+  geom_line() +
+  geom_point() +
+  scale_x_date(
+    date_labels = ("%b %d %Y"), 
+    breaks = dates_df2$date) +
+  labs(
+    x = NULL
+  ) +
+  theme_light()
+```
+
+:::  
+
+:::: 
+
+# What is a Time Series? {.theme-section}  
+
+## Definition of Time Series  
+
+::: {.fragment}  
+::: {.transparent}  
+::: {.r-stack}  
+
+An ordered sequence of values of a variable at equally spaced time intervals. 
+
+:::  
+:::  
+::: 
+
+::: {.fragment}  
+
+**From fpp3**: 
+
+Examples of time series data include:
+
+    Annual Google profits
+    Quarterly sales results for Amazon
+    Monthly rainfall
+    Weekly retail sales
+    Daily IBM stock prices
+    Hourly electricity demand
+    5-minute freeway traffic counts
+    Time-stamped stock transaction data
+
+Anything that is observed sequentially over time is a time series. 
+:::  
+
+## `ts()` data structure (1/2)
+
+### Univariate Time Series
+
+```{r}
+str(co2)
+co2
+```
+
+
+## `ts()` data structure (2/2)
+
+### Multivariate Time Series
+
+```{r}
+str(DAAG::greatLakes)
+DAAG::greatLakes
+```
+
+
+# Analyzing Time Series Data: Moving Averages {.theme-section}
+
+## Moving Averages (1/8)  
+
+```{r}
+#| code-fold: true
+supplier <- read_table(
+  "Supplier 	Cost 	Error 	ErrorSquared
+1 	9 	-1 	1
+2 	8 	-2 	4
+3 	9 	-1 	1
+4 	12 	2 	4
+5 	9 	-1 	1
+6 	12 	2 	4
+7 	11 	1 	1
+8 	7 	-3 	9
+9 	13 	3 	9
+10 	9 	-1 	1
+11 	11 	1 	1
+12 	10 	0 	0 ", col_names = TRUE
+)
+
+supplier
+```
+
+The **mean** cost is:   `r round(mean(supplier$Cost), 2)`.  
+The **SSE** is:         `r sum(supplier$ErrorSquared)`.  
+The **MSE** is:         `r round(mean(supplier$ErrorSquared), 2)`.  
+
+Is the *mean* a good estimate of the cost?  
+
+## Moving Averages (2/8)  
+
+```{r}
+#| code-fold: true
+supplier |> 
+  ggplot(aes(x = Supplier, y = Cost)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(supplier$Cost), color = "red") +
+  theme_light()
+```
+
+
+## Moving Averages (3/8)  
+
+```{r}
+#| code-fold: true
+pc_ebt <- read_table(
+  "Year 	Earnings_M 	Mean 	Error 	Squared_Error
+1985 	46.163 	48.676 	-2.513 	6.313
+1986 	46.998 	48.676 	-1.678 	2.814
+1987 	47.816 	48.676 	-0.860 	0.739
+1988 	48.311 	48.676 	-0.365 	0.133
+1989 	48.758 	48.676 	0.082 	0.007
+1990 	49.164 	48.676 	0.488 	0.239
+1991 	49.548 	48.676 	0.872 	0.761
+1992 	48.915 	48.676 	0.239 	0.057
+1993 	50.315 	48.676 	1.639 	2.688
+1994 	50.768 	48.676 	2.092 	4.378", col_names = TRUE
+)
+
+pc_ebt
+```
+
+The **mean** Earnings (\$M) is:   `r round(mean(pc_ebt$Earnings_M), 2)`.  
+The **SSE** is:               `r sum(pc_ebt$Squared_Error)`.  
+The **MSE** is:               `r round(mean(pc_ebt$Squared_Error), 2)`.  
+
+Is the *mean* a good estimate of the Earnings?  
+
+## Moving Averages (4/8)  
+
+### Plot of earnings over tiem 
+
+```{r}
+#| code-fold: true
+pc_ebt |> 
+  ggplot(aes(x = Year, y = Earnings_M)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(pc_ebt$Earnings_M), color = "red") +
+  theme_light()
+```
+
+
+## Moving Averages (5/8) 
+
+```{r}
+#| code-fold: true
+quarterly_sales <- read_table(
+  "Year     Quarter     Period     Sales
+90     1      1     362
+90     2      2     385
+90     3      3     432
+90     4      4     341
+91     1      5     382
+91     2      6     409
+91     3      7     498
+91     4      8     387
+92     1      9     473
+92     2     10     513
+92     3     11     582
+92     4     12     474
+93     1     13     544
+93     2     14     582
+93     3     15     681
+93     4     16     557
+94     1     17     628
+94     2     18     707
+94     3     19     773
+94     4     20     592
+95     1     21     627
+95     2     22     725
+95     3     23     854
+95     4     24     661", col_names = TRUE
+)
+
+quarterly_sales
+```
+
+
+## Moving Averages (6/8)
+
+```{r}
+#| code-fold: true
+quarterly_sales |> 
+  ggplot(aes(x = Period, y = Sales)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = mean(quarterly_sales$Sales), color = "red") +
+  theme_light()
+```
+
+## Moving Averages (7/8)
+
+```{r}
+#| code-fold: show
+
+quarterly_sales_moving_avg <- quarterly_sales |> 
+  mutate(
+    moving_avg_3 = slider::slide_dbl(Sales, mean, .before = 1, .after = 1, .complete = TRUE),
+    moving_avg_5 = slider::slide_dbl(Sales, mean, .before = 2, .after = 2, .complete = TRUE),
+    moving_avg_7 = slider::slide_dbl(Sales, mean, .before = 3, .after = 3, .complete = TRUE)
+  )
+
+quarterly_sales_moving_avg
+```
+
+## Moving Averages (8/8)
+
+
+```{r}
+#| code-fold: true
+#| warning: false
+quarterly_sales_moving_avg |> 
+  ggplot(aes(x = Period)) +
+  geom_line(aes(y = Sales, color = "Original")) +
+  geom_line(aes(y = moving_avg_3, color = "3-Period MA")) +
+  geom_line(aes(y = moving_avg_5, color = "5-Period MA")) +
+  geom_line(aes(y = moving_avg_7, color = "7-Period MA")) +
+  geom_smooth(aes(y = Sales, color = "Trend"), 
+              method = "lm", formula = y ~ x,
+              se = FALSE, linetype = "dashed") +
+  scale_color_manual(values = c(
+    "Original" = "black",
+    "3-Period MA" = "red",
+    "5-Period MA" = "blue",
+    "7-Period MA" = "green",
+    "Trend" = "purple"
+  )) +
+  labs(color = "Series") +  # Legend title
+  theme_light()
+```
+
+
+# Analyzing Time Series Data: Exponential Smoothing {.theme-section}  
+
+## Exponential Smoothing 
+
+- Single Exponential Smoothing  
+- Double Exponential Smoothing  
+- Triple Exponential Smoothing  
+
+## Single Exponential Smoothing  
+
+$$
+S_t = \alpha \sum_{i=1}^{t-2} (1-\alpha)^{i-1} y_{t-i} 
+       + (1-\alpha)^{t-2} y_1 \, , \,\,\,\,\, t \ge 2 \, .
+$$
+
+
+$$
+\alpha \sum_{i=0}^{t-1} (1-\alpha)^i = \alpha \left[ \frac{1-(1-\alpha)^t}{1-(1-\alpha)} \right] = 1 - (1-\alpha)^t
+$$
+<br>
+$$
+S_t = \alpha y_{t-1} + (1-\alpha)S_{t-1} \,\,\,\,\,\,\, 0 < \alpha \le 1 \,\,\,\,\,\,\, t \ge 3
+$$
+
+
+
+>We can see that the summation term shows that the contribution to the smoothed value becomes less at each consecutive time period.   
+>  
+>---6.4.3.1 Single Exponential Smoothing
+
+
+## Single Exponential Smoothing Plot
+
+```{r}
+#| code-fold: true
+
+# Plot of alpha (1 - alpha)^t for different values of alpha at t = 1:5
+alpha_values <- c(0.1, 0.3, 0.5, 0.7, 0.9)
+t_values <- 1:5
+
+alpha_table <- tibble()
+
+for (alpha in alpha_values) {
+  alpha_table <- alpha_table |> 
+    bind_rows(
+      tibble(
+        alpha = alpha,
+        t = t_values,
+        value = (1 - alpha)^t
+      )
+    )
+}
+
+alpha_table |>
+  ggplot(aes(x = t, y = value, color = factor(alpha))) +
+  geom_point() +
+  geom_line() +
+  labs(
+    x = "t",
+    y = expression((1 - alpha)^t),
+    color = "alpha"
+  ) +
+  scale_y_continuous(breaks = seq(0, 1, 0.1)) +
+  theme_light()
+```
+
+## Simple Exponential Smoothing
+
+$$
+S_t = \alpha x_t + (1 - \alpha) S_{t-1} \quad \text{for} \quad 0 \le \alpha \le 1
+$$
+
+where $S_t$ is the smoothed value at time $t$, $x_t$ is the observed value at time $t$, and $\alpha$ is the smoothing parameter.
+
+## Double Exponential Smoothing (Holt linear)
+
+$$
+S_t = \alpha x_t + (1 - \alpha) (S_{t-1} + b_{t-1})
+$$
+
+
+$$
+b_t = \beta (S_t - S_{t-1}) + (1 - \beta) b_{t-1}
+$$
+
+where $b_t$ is the trend component at time $t$, and $\beta$ is the trend smoothing parameter.
+
+## Triple Exponential Smoothing (Holt-Winters)
+
+$$
+\begin{align}
+S_t &= \alpha \frac{x_t}{c_t - L} + (1 - \alpha) (S_{t-1} + b_{t-1}) \\
+b_t &= \beta (S_t - S_{t-1}) + (1 - \beta) b_{t-1} \\
+c_t &= \gamma \frac{x_t}{S_t} + (1 - \gamma) c_{t-L}
+\end{align}
+$$
+
+Where $L$ is the length of the seasonal cycle, $c_t$ is the seasonal component at time $t$, and $\gamma$ is the seasonal smoothing parameter.
+
+## Data from NIST (6.4.3.2)  
+
+Fit below was using a single exponential smoothing model with alpha = 0.3
+
+```{r}
+#| code-fold: true
+#| warning: false
+sample_data <- read_table(
+  "Data 	Fit
+6.4 	 NA
+5.6 	6.4
+7.8 	6.2
+8.8 	6.7
+11.0 	7.3
+11.6 	8.4
+16.7 	9.4
+15.3 	11.6
+21.6 	12.7
+22.4 	15.4", col_names = TRUE
+)
+
+sample_data |> 
+  ggplot() +
+  geom_line(aes(x = seq_along(Data), y = Fit), color = "blue", linetype = "dashed") +
+  geom_line(aes(x = seq_along(Data), y = Data), color = "black") +
+  theme_light()
+```
+
+
+
+## Reproducing the fit
+
+### Function for Single Exponential Smoothing
+
+```{r}
+ses_rjh <- function(x, alpha = 0.3) {
+  n <- length(x)
+  S_t <- numeric(n)  # Initialize vector with zeros
+  
+  # Set first value
+  S_t[1] <- x[1]
+  
+  # Calculate smoothed values
+  for(t in 2:n) {
+    S_t[t] <- alpha * x[t] + (1 - alpha) * S_t[t-1]
+  }
+  
+  return(S_t)
+}
+```
+
+### Test the function 
+
+```{r}
+ses_rjh(sample_data$Data, alpha = 0.3)
+```
+
+## Plot the SES fit
+
+```{r}
+#| code-fold: true
+sample_data |> 
+  mutate(fit2 = ses_rjh(Data, alpha = 0.3))  |> 
+  ggplot(aes(x = seq_along(Data))) +
+  geom_line(aes(y = Data), color = "black") +
+  # geom_line(aes(y = Fit), color = "red") +
+  geom_line(aes(y = fit2), color = "blue", linetype = "dashed") +
+  theme_light()
+```
+
+
+## Function for Double Exponential Smoothing
+
+```{r}
+des_rjh <- function(x, alpha = 0.3, beta = 0.3) {
+  n <- length(x)
+  S_t <- numeric(n)  # Initialize vector with zeros
+  b_t <- numeric(n)  # Initialize vector with zeros
+  
+  # Set first value
+  S_t[1] <- x[1]
+  b_t[1] <- x[2] - x[1]
+  
+  # Calculate smoothed values
+  for(t in 2:n) {
+    S_t[t] <- alpha * x[t] + (1 - alpha) * (S_t[t-1] + b_t[t-1])
+    b_t[t] <- beta * (S_t[t] - S_t[t-1]) + (1 - beta) * b_t[t-1]
+  }
+  
+  return(S_t + b_t)
+}
+```
+
+### Test the function 
+
+```{r}
+des_rjh(sample_data$Data, alpha = 0.3, beta = 0.3)
+```
+
+## Plot the DES fit
+
+```{r}
+sample_data |> 
+  mutate(fit2 = des_rjh(Data, alpha = 0.3, beta = 0.3))  |> 
+  ggplot(aes(x = seq_along(Data))) +
+  geom_line(aes(y = Data), color = "black") +
+  # geom_line(aes(y = Fit), color = "red") +
+  geom_line(aes(y = fit2), color = "blue") +
+  theme_light()
+```
+
+
+## Function for Triple Exponential Smoothing
+
+```{r}
+tes_rjh <- function(x, alpha = 0.3, b = 0.3, gamma = 0.3, m = 1) {
+  n <- length(x)
+  S_t <- numeric(n)  # Initialize vector with zeros
+  b_t <- numeric(n)  # Initialize vector with zeros
+  c_t <- numeric(n)  # Initialize vector with zeros
+  
+  # Set first value
+  S_t[1] <- x[1]
+  b_t[1] <- x[2] - x[1]
+  c_t[1] <- x[3] - x[2]
+  
+  # Calculate smoothed values
+  for(t in 2:n) {
+    S_t[t] <- alpha * x[t] + (1 - alpha) * (S_t[t-1] + b_t[t-1])
+    b_t[t] <- b * (S_t[t] - S_t[t-1]) + (1 - b) * b_t[t-1]
+    c_t[t] <- gamma * (S_t[t] - S_t[t-1]) + (1 - gamma) * c_t[t-1]
+  }
+  
+  return(S_t + b_t + c_t)
+}
+```  
+
+### Test the function 
+
+```{r}
+tes_rjh(sample_data$Data, alpha = 0.3, b = 0.3, gamma = 0.3)
+```
+
+## Plot the fit TES fit 
+
+```{r}
+sample_data |> 
+  mutate(fit2 = tes_rjh(Data, alpha = 0.3, b = 0.3, gamma = 0.3))  |> 
+  ggplot(aes(x = seq_along(Data))) +
+  geom_line(aes(y = Data), color = "black") +
+  # geom_line(aes(y = Fit), color = "red") +
+  geom_line(aes(y = fit2), color = "blue") +
+  theme_light()
+```
+
+## Seasonal Data 
+
+```{r}
+quarterly_sales <- read_table(
+  "Year     Quarter     Period     Sales
+90     1      1     362
+90     2      2     385
+90     3      3     432
+90     4      4     341
+91     1      5     382
+91     2      6     409
+91     3      7     498
+91     4      8     387
+92     1      9     473
+92     2     10     513
+92     3     11     582
+92     4     12     474
+93     1     13     544
+93     2     14     582
+93     3     15     681
+93     4     16     557
+94     1     17     628
+94     2     18     707
+94     3     19     773
+94     4     20     592
+95     1     21     627
+95     2     22     725
+95     3     23     854
+95     4     24     661", col_names = TRUE
+)
+
+quarterly_sales
+```
+
+## Use the tes_rjh function to "fit" the data "by eye"
+
+```{r}
+quarterly_sales |> 
+  mutate(fit2 = tes_rjh(Sales, alpha = 0.7, b = 0.3, gamma = 0.9))  |> 
+  ggplot(aes(x = seq_along(Sales))) +
+  geom_line(aes(y = Sales), color = "black") +
+  geom_line(aes(y = fit2), color = "blue") +
+  theme_light()
+```
+
+# Forecasting {.theme-section}  
+
+## Convert the quarterly data to a tsibble (1/3)
+
+```{r}
+quarterly_sales_ts_simple <- quarterly_sales |>
+  select(Sales) |> 
+  ts(start = c(1990, 1), frequency = 4) |> 
+  as_tsibble()
+
+quarterly_sales_ts_simple
+```
+
+## Convert the quarterly data to a tsibble (2/3)
+
+```{r}
+## Multivariate
+z <- ts(matrix(rnorm(300), 100, 3), start = c(1961, 1), frequency = 12)
+head(z)
+```
+
+## Convert the quarterly data to a tsibble (3/3)
+
+```{r}
+tbl3 <- tibble(
+  mth = rep(yearmonth("2010 Jan") + 0:8, each = 3),
+  xyz = rep(c("x", "y", "z"), each = 9),
+  abc = rep(letters[1:3], times = 9),
+  value = rnorm(27)
+)
+as_tsibble(tbl3, key = c(xyz, abc))
+```
+
+
+## Use the ETS function from fpp3 (1/3)
+
+```{r}
+quarterly_sales
+```
+
+
+## Use the ETS function from fpp3 (2/3)
+
+```{r}
+quarterly_sales_tsibble <- quarterly_sales |>
+  mutate(
+    # Convert 2-digit year to 4-digit year
+    Year = 1900 + Year,
+    # Create proper quarter dates by converting to months (Q1=1, Q2=4, Q3=7, Q4=10)
+    Month = (Quarter - 1) * 3 + 1,
+    # Create the yearquarter date
+    YearQuarter = yearquarter(paste(Year, Month, "01", sep = "-"))
+  ) |>
+  # Select needed columns and convert to tsibble
+  select(YearQuarter, Sales) |>
+  as_tsibble(
+    index = YearQuarter
+  )
+
+quarterly_sales_tsibble
+```
+
+## An easier way to get the data frame 
+
+```{r}
+quarterly_sales_tsibble2 <- quarterly_sales |>
+ select(Sales) |> 
+  ts(start = c(1990, 1), frequency = 4) |>
+  as_tsibble()
+
+quarterly_sales_tsibble2
+```
+
+
+## Use the ETS function from fpp3 (3/3)
+
+```{r}
+fit_ets <- quarterly_sales_tsibble |>
+  model(model_ets = ETS(Sales ~ error("A") + trend("A") + season("A")))
+
+autoplot(quarterly_sales_tsibble, Sales) +
+  geom_line(aes(y = .fitted), data = augment(fit_ets), color = "blue")
+```
+
+## Forecasting with ETS 
+
+```{r}
+fit_ets |> 
+  forecast(h = 8) |> 
+  autoplot(quarterly_sales_tsibble)
+```
+
+## Fit and Forecasat with ETS 
+
+```{r}
+fit_ets |> 
+  forecast(h = 8) |> 
+  autoplot(quarterly_sales_tsibble) +
+  geom_line(aes(y = .fitted), data = augment(fit_ets), color = "blue")
+```
+
+
+# In Practice {.theme-section}
+
+## Real World Example: SEMI Forecasting 
+
+[Global Silicon Wafer Shipments](https://www.semi.org/en/news-media-press-releases/semi-press-releases/global-silicon-wafer-shipments-to-remain-soft-in-2024-before-strong-expected-rebound-in-2025-SEMI-reports)
+
+Units are in "million square inches (MSI)"
+
+```{r}
+msi_historical <- read_tsv("datasets/MSI.txt", col_names = c("year", "Q1", "Q2", "Q3", "Q4"))
+msi_historical
+```
+
+## Wrangle the Data into a Long Format  
+
+|year|quarter|msi|
+|----|-------|---|
+|2001|Q1|1250|
+|2001|Q2|988|
+|...|...|...|
+
+### And convert to a time series object (tsibble)
+
+```{r}
+msi_ts <- msi_historical |> 
+  pivot_longer(cols = -year, names_to = "quarter", values_to = "quarter_value", ) |> 
+  separate_wider_delim(cols = quarter_value, names = c("quarter_2", "msi"), delim = " ") |> 
+  mutate(msi = as.numeric(str_remove(msi, ","))) |> 
+  select(-quarter_2) |> 
+  mutate(year_quarter = str_c(year, " ", quarter)) |> 
+  select(year_quarter, msi) |> 
+  mutate(year_quarter = yearquarter(year_quarter)) |> 
+  filter(!is.na(msi)) |>
+  as_tsibble(index = year_quarter)
+
+msi_ts
+```
+
+## Plot the Time Series
+
+```{r}
+#| code-fold: true
+#| warning: false
+
+my_theme <- theme(
+    plot.title = ggtext::element_markdown(size = 18, face = "bold"),
+    plot.title.position = "plot",
+    plot.subtitle = ggtext::element_markdown(size = 14),
+    axis.text.x = ggtext::element_markdown(size = 14),
+    axis.text.y = ggtext::element_markdown(size = 14),
+    plot.caption = ggtext::element_markdown(hjust = 0, margin = margin(t = 20)),
+    plot.caption.position = "plot"
+    )
+
+msi_ts |> 
+  autoplot(msi) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Global Silicon Wafer Shipments",
+    subtitle = "MSI (million square inches)",
+    caption = "Source: SEMI, October 2024"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_yearquarter(date_labels = "%Y", date_minor_breaks = "1 year") +
+  theme_light() +
+  my_theme
+  
+```
+
+## Fit and Forecast with ETS
+
+```{r}
+fit_ets_msi <- msi_ts |> 
+  model(model_ets = ETS(msi ~ error("A") + trend("A") + season("A")))
+
+fit_ets_msi |>
+  forecast(h = 12) |>
+  autoplot(msi_ts) +
+  geom_line(aes(y = .fitted), data = augment(fit_ets_msi), color = "blue") +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Global Silicon Wafer Shipments",
+    subtitle = "MSI (million square inches)",
+    caption = "Source: SEMI, October 2024"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_yearquarter(date_labels = "%Y", date_minor_breaks = "1 year") +
+  theme_light() +
+  my_theme
+```
+
+
+## Forecasted Values using ARIMA 
+
+```{r}
+fit_arima_msi <- msi_ts |> 
+  model(model_arima = ARIMA(msi, stepwise = FALSE, approximation = FALSE))
+
+fit_arima_msi |>
+  forecast(h = 12) |>
+  autoplot(msi_ts) +
+  geom_line(aes(y = .fitted), data = augment(fit_arima_msi), color = "blue") +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Global Silicon Wafer Shipments",
+    subtitle = "MSI (million square inches)",
+    caption = "Source: SEMI, October 2024"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_yearquarter(date_labels = "%Y", date_minor_breaks = "1 year") +
+  theme_light() +
+  my_theme
+```
+
+## Forecasted Values by Year 
+
+```{r}
+msi_three_year_forecast <- fit_arima_msi |>
+  forecast(h = 14)
+
+msi_three_year_forecast_annual <- as_tibble(msi_three_year_forecast) |> 
+  mutate(year = year(year_quarter)) |> 
+  group_by(year) |> 
+  summarise(
+    forecasted_msi = sum(.mean))
+
+msi_three_year_forecast_annual
+```
+
+```{r}
+msi_long_year <- msi_historical |> 
+  pivot_longer(cols = -year, names_to = "quarter", values_to = "quarter_value", ) |> 
+  separate_wider_delim(cols = quarter_value, names = c("quarter_2", "msi"), delim = " ") |> 
+  mutate(msi = as.numeric(str_remove(msi, ","))) |> 
+  select(-quarter_2) |> 
+  group_by(year) |>
+  summarise(
+    msi = sum(msi, na.rm = TRUE)
+  ) |>
+  ungroup()
+
+msi_long_year
+```
+
+
+## Join the Data Frames
+
+```{r}
+msi_long_year_join <- msi_long_year |> 
+  full_join(msi_three_year_forecast_annual, by = "year") |> 
+  pivot_longer(cols = c(msi, forecasted_msi), names_to = "type", values_to = "msi")
+
+msi_long_year_join
+```
+
+## SEMI Forecast
+
+```{r}
+semi_forecast <- tibble(
+  year = 2024:2027,
+  semi_foreast_msi = c(12174, 13328, 14507, 15413)
+)
+
+semi_forecast
+```
+
+## ARIMA Forecast
+
+```{r}
+arima_forecast <- msi_long_year_join |> 
+  filter(year >= 2024) |> 
+  group_by(year) |>
+  summarise(
+    msi = sum(msi, na.rm = TRUE)
+  ) |> 
+  ungroup()
+
+arima_forecast
+```
+
+
+
+## Plot the ARIMA vs SEMI Forecast
+
+```{r}
+#| code-fold: true
+#| warning: false
+msi_long_year_join |> 
+  filter(year >= 2022) |>
+  ggplot(aes(x = year)) +
+  geom_col(aes(y = msi, fill = type)) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Global Silicon Wafer Shipments",
+    subtitle = "MSI (million square inches)",
+    caption = "Source: SEMI, October 2024",
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_fill_manual(values = c("grey", "lightblue"), name = NULL, labels = c("ARIMA", "SEMI")) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_light() +
+  my_theme
+```
+
+## Plot the ARIMA vs SEMI Forecast (with SEMI Forecast)
+
+```{r}
+#| code-fold: true
+
+ggplot() +
+  geom_line(aes(x = year, y = msi), data = arima_forecast, color = "grey", linewidth = 2) +
+  geom_line(aes(x = year, y = semi_foreast_msi), data = semi_forecast, color = "lightblue", linewidth = 2) +
+  geom_point(aes(x = year, y = msi), 
+             data = arima_forecast, color = "grey", shape = 22, size = 4, stroke = 2, fill = "white") +
+  geom_point(aes(x = year, y = semi_foreast_msi), 
+             data = semi_forecast, color = "lightblue", shape = 21, size = 4, stroke = 2, fill = "white") +
+  annotate("text", x = 2025, y = 14600, label = "ARIMA Forecast", hjust = 0, vjust = 0, 
+           color = "grey", fontface = "bold") +
+  annotate("text", x = 2025.1, y = 13100, label = "SEMI Forecast", hjust = 0, vjust = 0, 
+           color = "lightblue", fontface = "bold") +
+  scale_y_continuous(labels = scales::comma) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = "Global Silicon Wafer Shipments",
+    subtitle = "MSI (million square inches)",
+    caption = "Source: SEMI, October 2024",
+  ) +
+  theme_light() +
+  my_theme
+
+```
+
+
+
+# Homework {.theme-section}  
+
+## Univariate Time Series Carbon Dioxide Data
+
+### Monthly $\textrm{CO}_2$ Concentrations
+
+```{r}
+co2
+```
+
+## Fit an ETS Model to the `co2` data (1/ )
+
+### Convert to a `tsibble`
+
+```{r}
+co2_tsibble <- co2 |> 
+  as_tsibble(index = yearmonth)
+
+co2_tsibble
+```
+
+## Fit an ETS Model to the `co2` data (2/ )
+
+### Fit the ETS model
+
+```{r}
+fit_ets_co2 <- co2_tsibble |> 
+  model(model_ets = ETS(value ~ error("A") + trend("A") + season("A")))
+```
+
+## Fit an ETS Model to the `co2` data (3/ )
+
+### Forecast and plot
+
+```{r}
+fit_ets_co2 |> 
+  forecast(h = 324) |> 
+  autoplot(co2_tsibble) +
+  geom_point(x = as_date("2024-10-01"), y = 422, color = "red", size = 4) +
+  theme_light()
+```
+
+
+## Fit an ETS Model to the `co2` data (4/ )
+
+### Plot the data, fit, and forecast 
+
+```{r}
+co2_column_names <- c("year", "month", "decimal_date", "monthly_average", "deseasonalized", "n_days", "stdev_days", "uncertainty_mean")
+
+co2_current_data <- read_table("https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_mlo.txt", skip = 52, col_names = co2_column_names)
+
+co2_current_data
+```
+
+## Create a `ts` objectd
+
+```{r}
+co2_current_data_ts <- co2_current_data |> 
+  select(monthly_average) |>
+  ts(start = c(1959, 1), frequency = 12) |> 
+  as_tsibble()
+
+co2_current_data_ts
+```
+
+## Fit an ETS Model to the `co2` data (5/ )
+
+```{r}
+fit_ets_co2_current <- co2_current_data_ts |> 
+  model(model_ets = ETS(value ~ error("A") + trend("A") + season("A")))
+
+fit_ets_co2_current |> 
+       forecast(h = 120) |>
+  autoplot(filter(co2_current_data_ts, index >= yearmonth("2000-01-1"))) +
+  scale_x_yearmonth(date_labels = "%Y") +
+  labs(
+    x = "Year",
+    y = "CO<sub>2</sub> Concentration (ppm)"
+  ) +
+  theme_light() +
+  theme(axis.title.y = ggtext::element_markdown())
+```
+

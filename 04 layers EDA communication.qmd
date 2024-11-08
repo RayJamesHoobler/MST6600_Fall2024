@@ -1,0 +1,1033 @@
+---
+title: "Visualize: Layers, Exploratory Data Analysis, Communication"
+subtitle: "Module 04"
+author: "Ray J. Hoobler"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: true
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---  
+
+# Layers (ggplot2) {.theme-section}  
+
+## Asthetic mapping 
+
+What can be included in the <MAPPINGS> arguments of the `aes()` function?
+
+```{}
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>)
+  )
+```
+
+Variables (quantitative or categorical) can be mapped to the following aesthetics:  
+
+* x  
+* y  
+* color  
+* fill  
+* size  
+* shape  
+* linetype  
+* alpha  
+
+## Explore Aesthetics with the Palmer Penguins Data (1/6)  
+
+```{r}
+#| code-fold: show
+
+library(palmerpenguins)
+library(tidyverse)
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm))
+```
+
+## Explore Aesthetics with the Palmer Penguins Data (2/6)  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = species))
+```
+
+## Explore Aesthetics with the Palmer Penguins Data (3/6)  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = species, 
+                           size = body_mass_g))
+```
+
+## Explore Aesthetics with the Palmer Penguins Data (4/6)  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = species, 
+                           size = body_mass_g, 
+                           shape=island))
+```
+
+## Explore Aesthetics with the Palmer Penguins Data (5/6)  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm, 
+                           size = body_mass_g, 
+                           shape=island, 
+                           alpha = 0.5),
+             color = "blue")
+```
+
+## Explore Aesthetics with the Palmer Penguins Data (6/6)  
+
+What's happening here?  
+
+```{r}
+#| code-fold: show
+
+ggplot(data = penguins) + 
+  geom_point(mapping = aes(x = bill_length_mm, y = bill_depth_mm, 
+                           color = "blue"))
+```
+
+## Geometric Objects (1/2)
+
+:::: {.columns}
+
+::: {.column width=30%}
+
+### ggplot2 provides <br>more than 40 geoms! {.smaller}  
+
+:::  
+
+::: {.column width=70%}
+
+```{r}
+#| code-fold: show
+#| code-line-numbers: "1,4,7,10"
+#| fig-width: 6
+#| fig-height: 2.5
+#| out-width: 600px
+#| out-height: 250px
+
+library(patchwork)
+
+p1 <- ggplot(penguins, aes(x = body_mass_g)) + 
+  geom_histogram()
+
+p2 <- ggplot(penguins, aes(x =body_mass_g)) +
+  geom_density()  
+
+p3 <- ggplot(penguins, aes(x = body_mass_g)) +
+  geom_boxplot()
+
+p1 + p2 + p3
+```
+
+:::  
+
+::::  
+
+## Geometric Objects (2/2)
+
+### Libraries are availabe for specialty plots (i.e., "pair plots")
+
+```{r}
+#| code-fold: show
+#| message: false
+#| warning: false
+
+library(GGally)
+
+ggpairs(penguins, columns = 3:6, (aes(color = species, alpha = 1/4)))
+```
+
+## Facets  
+
+The pair plot above is an example of a facet plot. We can create a facet plot by adding the `facet_wrap()` or `facet_grid()` function to the ggplot object.  
+
+```{r}
+#| code-fold: show
+#| warning: false
+penguins |> 
+  ggplot() +
+  geom_histogram(aes(x = body_mass_g/1000, fill = species), bins = 30) +
+  facet_wrap(vars(island), ) +
+  theme(panel.spacing.x = unit(1, "lines"))
+```
+
+## `facet_grid()` (1/3)
+
+```{r}
+#| code-fold: show
+#| warning: false
+
+penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = flipper_length_mm, color=species)) +
+  facet_grid(vars(sex), vars(island)) +
+  theme(panel.spacing.x = unit(1, "lines"))
+```
+
+## `facet_grid()` (1/3)
+
+```{r}
+#| code-fold: show
+#| warning: false
+
+penguins |> 
+  filter(!is.na(sex)) |>
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = flipper_length_mm, color=species)) +
+  facet_grid(vars(sex), vars(island)) +
+  theme(panel.spacing.x = unit(1, "lines"))
+```
+
+## `facet_grid()` (3/3)
+
+```{r}
+#| code-fold: show
+#| warning: false
+
+penguins |> 
+  filter(!is.na(sex)) |>
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = flipper_length_mm, color=island)) +
+  facet_grid(vars(species), vars(sex)) +
+  theme(panel.spacing.x = unit(1, "lines"))
+```
+
+## Facets using the `~` operator  
+
+Using the `~` operator to specify the rows and columns of the facet grid.  
+
+```{r}
+#| code-fold: show
+#| warning: false
+#| code-line-numbers: "|5|"
+
+penguins |> 
+  filter(!is.na(sex)) |>
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = flipper_length_mm, color=island)) +
+  facet_grid(species ~ .) +
+  theme(panel.spacing.x = unit(1, "lines"))
+```
+
+## Using the Dot(.) in ggplot2 Faceting
+
+### Prompt for Claude
+Can you explain the use of "." in R? Specifically, as it's used in ggplot2 for functions like facet_grid(. ~ species)
+
+### Response from Claude
+The dot (.) in R, especially as used in ggplot2 functions like `facet_grid()`, has a special meaning. Let me explain its use:
+
+1. In ggplot2's `facet_grid()`:
+
+   In the context of `facet_grid(. ~ species)`, the dot serves as a placeholder. It indicates that you don't want to split the plot on the rows (left side of the tilde ~), but you do want to split it on the columns (right side of the tilde) based on the "species" variable.
+
+   - `facet_grid(. ~ species)`: Creates separate plots for each unique value in the "species" column, arranged horizontally.
+   - `facet_grid(species ~ .)`: Would create separate plots for each unique value in the "species" column, arranged vertically.
+   - `facet_grid(var1 ~ var2)`: Would create a grid of plots, with "var1" determining the rows and "var2" the columns.
+
+2. In other R contexts:
+
+   The dot can also be used in other situations in R:
+
+   - In pipe operations (`%>%` or `|>`), the dot represents the object being passed through the pipe.
+   - In formulas, it can represent "all other variables" not explicitly mentioned.
+   - In function definitions, it can be used to pass additional arguments.
+
+
+## Assignment 
+
+Chapter 9
+9.4.1 Exercises. Questions 1 through 7
+
+Chapter 9 
+9.3.1 Exercises, questions 1 through 4
+
+## Statistical Transformations (1/2)
+
+Several geometric objects in ggplot2 carry out statistical transformations, examples include: 
+
+* `geom_histogram()` calculates the count of observations in bins.
+* `geom_density()` calculates the density of a variable.
+* `geom_bar()` calculates the count of observations for each level of a categorical variable.
+* `geom_boxplot()` calculates the median, quartiles, and outliers of a variable.
+* `geom_smooth()` calculates a smoothed line (or fit) through the data.
+
+Figure 9.2 from R4DS 2e provides the following graphic:
+![](https://r4ds.hadley.nz/images/visualization-stat-bar.png){width=80%}
+
+## Statistical Transformations (2/2) {.smaller}
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+For every geometric object `geom_*`, there is a corresponding statistical transformation `stat_*`.
+
+Additional transformations can be called to override the default values. For instance, the `geom_histogram()` includes the following: 
+
+#### Computed variables  
+
+These are calculated by the 'stat' part of layers and can be accessed with delayed evaluation.
+
+* after_stat(count) <br>number of points in bin.
+
+* **after_stat(density)** <br>density of points in bin, scaled to integrate to 1.
+
+* after_stat(ncount) <br> count, scaled to a maximum of 1.
+
+* after_stat(ndensity) <br>density, scaled to a maximum of 1.
+
+* after_stat(width) <br>widths of bins.
+
+:::  
+::: {.column width=70%}  
+
+```{r} 
+#| code-fold: true
+#| warning: false
+#| code-line-numbers: "3-4"
+
+penguins |> 
+  ggplot() +
+  geom_histogram(aes(x = body_mass_g, y = after_stat(density), fill = species), 
+                 bins = 30, show.legend = FALSE) +
+  theme(
+    axis.title.y = element_text(size = 24, color = "red", face = "bold")
+  )
+```
+
+:::  
+
+::::  
+
+## Position Adjustments (1/6)
+
+```{r}
+#| code-fold: show
+
+machine <- read_table("datasets/MACHINE.DAT", 
+                      skip = 25, 
+                      col_names = c("machine", "day", "time", "sample", "diameter"), 
+                      col_types = "ffffd")
+
+machine
+```
+
+
+## Position Adjustments (2/6)
+
+:::: {.columns}  
+
+:::  {.column width=50%}  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = day, y = diameter, 
+                 color = machine))
+```
+
+:::  
+
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = day, y = diameter, 
+                 color = machine), position = "jitter")
+```
+
+:::  
+
+::::  
+
+## Position Adjustments (3/6)
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = day, y = diameter, color = machine), 
+             position = position_jitter(width = 0.1))
+```
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = time, y = diameter, color = machine), 
+             position = position_jitter(width = 0.1))
+```
+
+:::  
+
+::::  
+
+## Position Adjustments (4/6)
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  mutate(machine_time = str_c(machine, time, sep = "_")) |> 
+  ggplot() +
+  geom_point(aes(x = machine_time, y = diameter, color=machine), position = position_jitter(width = 0.1))
+```
+
+## Position Adjustments (5/6)
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = machine, y = diameter, color = time), position = position_dodge(width = 0.5))
+```
+
+## Position Adjustments (6/6)
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = machine, y = diameter, color = time), position = position_jitterdodge(dodge.width = 0.5, jitter.width = 0.5))
+```
+
+## The Layered Grammar of Graphics  
+
+:::: {.columns}
+
+::: {.column width=70%}
+
+```{{r}}
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>),
+     stat = <STAT>, 
+     position = <POSITION>
+  ) +
+  <COORDINATE_FUNCTION> +
+  <FACET_FUNCTION>
+```
+
+:::  
+
+::::  
+
+# Exploratory Data Analysis (EDA) {.theme-section}  
+
+## EDA with the MACHINE.DAT Data (1/3) {.smaller}  
+
+Location **AND** Variation 
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  group_by(machine, time) |>
+  summarise(mean_diameter = mean(diameter), 
+            sd_diameter = sd(diameter), 
+            ci_diameter = 1.96 * sd(diameter) / sqrt(n())) |>
+  ungroup() |>
+  mutate(machine_time = str_c(machine, time, sep = "_")) |>
+  ggplot() +
+  geom_point(aes(x = machine_time, y = mean_diameter, color = machine), size = 4) +
+  geom_errorbar(aes(x = machine_time, 
+                    ymin = mean_diameter - ci_diameter, 
+                    ymax = mean_diameter + ci_diameter), width = 0.25)
+```
+
+
+## EDA with the MACHINE.DAT data (2/3)  
+
+Location **AND** Variation  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_density(aes(x = diameter, fill = machine), alpha=1/3) +
+  geom_vline(xintercept = 0.125, linetype = "dashed") +
+  scale_x_continuous(limits = c(0.1175, 0.1325)) +
+  facet_grid(rows = vars(time))
+```
+
+## EDA with the MACHINE.DAT data (3/3)
+
+Location **AND** Variation  
+
+```{r}
+#| code-fold: show
+
+machine |> 
+  ggplot() +
+  geom_point(aes(x = machine, y = diameter, color = time), width = 0.1, position = position_jitterdodge(dodge.width = .75, jitter.width = 0.2)) +
+  geom_boxplot(aes(x = machine, y = diameter, fill = time), alpha = 1/3)
+```
+
+
+## Assignment  
+
+* Carry out an EDA on the [FURNACE.DAT dataset](https://www.itl.nist.gov/div898/handbook/datasets/FURNACE.DAT).   
+* Are there any trends in the data that would be difficult to detect with standard summary statistics? 
+* Are there any outliers in the data? (A description of the experiment is available on the [NIST website](https://www.itl.nist.gov/div898/handbook/ppc/section5/ppc511.htm))
+
+```{r}
+#| code-fold: true
+
+column_names <- c("RUN ZONE WAFER THICKNESS") |> 
+  str_to_lower() |> 
+  str_split(" ") |> 
+  unlist()
+
+furnace <- read_table("datasets/FURNACE.DAT", 
+                      skip = 25, 
+                      col_names = column_names, 
+                      col_types = "iffd")
+
+furnace |> 
+  ggplot() +
+  geom_point(aes(x = run, y = thickness))
+```
+
+# Communication {.theme-section}  
+
+## Labels {.smaller} 
+
+:::: {.columns}  
+
+::: {.column width=30%}  
+
+For most plots, the `labs()` layer will provide the right amount of customization.  
+
+::: {.fragment}  
+![](https://m.media-amazon.com/images/I/71EN1l+uQKL._SL1500_.jpg){width=200px}
+::: 
+
+:::  
+::: {.column width=70%}  
+
+```{r}
+#| code-fold: show
+#| warning: false
+#| code-line-numbers: "|4-9|"
+
+penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  labs(title = "Bill Length and Depth Serve as Natural Classifiers", 
+       subtitle = "palmerpenguins: Palmer Archipelago (Antarctica) Penguin Data",
+       x = "Bill Length (mm)", 
+       y = "Bill Depth (mm)", 
+       color = "Species",
+       caption = "https://github.com/allisonhorst/palmerpenguins")
+```
+
+:::  
+
+::::  
+
+## Annotations  
+
+* `geom_text()`  
+
+* `annotate()`   
+
+## Annotations: `geom_text()` (1/2)  
+
+### Calculate mean values for Bill Depth and Bill Length for each species  
+
+```{r}
+#| code-fold: show
+
+mean_bill_depth_length <- penguins |> 
+  group_by(species) |> 
+  summarise(mean_bill_length = mean(bill_length_mm, na.rm = TRUE), 
+            mean_bill_depth = mean(bill_depth_mm, na.rm = TRUE)) |> 
+  ungroup()
+
+mean_bill_depth_length
+```
+
+## Annotations: `geom_text()` (2/2)
+
+```{r}
+#| code-fold: true
+#| warning: false
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+library(ggrepel)
+
+penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species), alpha = 1/4, show.legend = FALSE) +
+  geom_point(data = mean_bill_depth_length, 
+             aes(x = mean_bill_length, y = mean_bill_depth, color = species),
+             size = 4, show.legend = FALSE) +
+  geom_label_repel(data = mean_bill_depth_length, 
+            aes(x = mean_bill_length, y = mean_bill_depth, label = species, color = species), 
+            size = 4, fontface = "bold", box.padding = 1, show.legend = FALSE, seed = 42) +
+  labs(
+    title = "Comparison of Means",
+    subtitle = "Bill Length and Depth by Species",
+    x = "Bill Length (mm)",
+    y = "Bill Depth (mm)",
+    caption = "palmerpenguins: Palmer Archipelago (Antarctica) Penguin Data"
+  ) +
+  theme_classic()
+
+```
+
+
+## Annotations: `annotate()`  
+
+```{r}
+#| code-fold: true 
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+furnace |> 
+  ggplot() +
+  geom_point(aes(x = seq_along(thickness), y = thickness)) +
+  geom_hline(yintercept = 560, linetype = "dashed") +
+  geom_hline(yintercept = c(460, 660), linetype = "dashed", color = "red") +
+  annotate("text", x = 175, y = 560-50, label = "Target Thickness", color = "black", size = 4, fontface = "bold") +
+  annotate("segment", x = 175, xend = 190, y = 520, yend = 560, 
+           arrow = arrow(ends = "last", length = unit(0.3, "cm")), 
+           size = 0.5, color = "black") +
+  annotate("text", x = 20, y = 460+10, label = "Lower Control Limit", color = "red", size = 4, fontface = "bold") +
+  annotate("text", x = 20, y = 660-10, label = "Upper Control Limit", color = "red", size = 4, fontface = "bold") +
+  labs(
+    title = "Run Sequence Plot of Furnace Data",
+    subtitle = "Thickness of processed wafers",
+    x = "Sample Number",
+    y = "Thickness (Å)",
+    caption = "\nhttps://www.itl.nist.gov/div898/handbook/ppc/section5/ppc511.htm"
+  ) +
+  theme_classic()
+```
+
+## Scales (1/4)  
+
+:::: {.columns}  
+
+::: {.column width=50%}
+
+[FRED Economic Data](https://fred.stlouisfed.org/series/MEHOINUSA672N)
+
+**Source:** [U.S. Census Bureau](http://www.census.gov/) 
+
+**Release:** [Income and Poverty in the United States](http://www.census.gov/topics/income-poverty/income.html)  
+
+**Units:**  2022 CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted
+
+**Frequency:**  Annual
+
+Household data are collected as of March.
+
+>. . . the Consumer Price Index retroactive series using current methods (R-CPI-U-RS) presents an estimate of the CPI for all Urban Consumers (CPI-U) from 1978 to the present that incorporates, when possible, most of the improvements made over that time span into the entire series.
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show
+rmhi <- read_csv("datasets/MEHOINUSA672N.csv", col_names = TRUE) |> 
+  rename(date = DATE, median_income = MEHOINUSA672N)
+rmhi |> head()
+```
+
+:::  
+
+::::  
+
+## Scales (2/4)  
+
+### Plot the data  
+
+```{r}
+#| code-fold: true 
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue")
+```
+
+## Scale (3/4)  
+
+:::: {.columns}  
+
+:::  {.column width=50%}  
+
+### Add labels
+
+```{r}
+#| code-fold: true
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  theme_linedraw()
+```
+
+:::  
+
+::: {.column width=50%}  
+
+### What else?
+
+::: {.fragment}
+
+* Update the y-axis to include commas (or dollar symbols).  
+* Set the x-axis and y-axis limits to provide starting and ending points.  
+* Customize x-axis and y-axis break points (tick marks).  
+* Customize various fonts as needed.  
+
+:::  
+
+:::  
+
+:::: 
+
+## Scale (4/4)  
+
+### Update the graphic to include the suggestions above 
+
+```{r}
+#| code-fold: true
+#| code-line-numbers: "|1-2|14-15|"
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw() 
+```
+
+## Themes (1/2)
+
+### Themes give you considerable control over the appearance of your plot.
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw()
+``` 
+
+:::  
+
+::: {.column width=50%}  
+
+### Proposed changes:  
+
+::: {.fragment}  
+
+* Increase the font size of the title and make the subtitle italic.
+* Change the font size of the x and y axis text.  
+* Move the title, subtitle, and caption to the left. 
+* Remove the x-axis and y-axis labels (use the subtitle for y-label).
+
+Look at **?theme**
+
+:::  
+
+:::  
+
+::::
+
+## Themes (2/2)  
+
+### Update the graphic to include the suggestions above  
+
+:::: {.columns}  
+
+:::  {.column width=50%}  
+
+Original visualization:  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "Units: CPI-U-RS Adjusted Dollars, Not Seasonally Adjusted",
+    x = "Year",
+    y = "2022 CPI-U-RS Adjusted Dollars",
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw()
+``` 
+
+:::  
+
+::: {.column width=50%}  
+
+Updated visualization:  
+
+```{r}
+#| code-fold: true
+
+date_limits = c(as_date("1980-01-01"), as_date("2025-01-01"))
+date_breaks = seq(as_date("1980-01-01"), as_date("2025-01-01"), by = "5 years")
+
+rmhi |> 
+  ggplot() +
+  geom_line(aes(x = date, y = median_income), color = "blue") +
+  labs(
+    title = "Real Median Household Income in the United States",
+    subtitle = "CPI-U-RS Adjusted Dollars (2022), Not Seasonally Adjusted",
+    x = NULL,
+    y = NULL,
+    caption = "Source: U.S. Census Bureau"
+  ) +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_date(limits  = date_limits, breaks = date_breaks, date_labels = "%Y") +
+  theme_linedraw() +
+  theme(
+    plot.title = element_text(size = 20, face = "bold", hjust = 0),
+    plot.title.position = "plot",
+    plot.subtitle = element_text(size = 14, face = "italic", hjust = 0),
+    axis.title.x = element_blank(),
+    axis.text = element_text(size = 12),
+    axis.title.y = element_blank(),
+    plot.caption = element_text(size = 10, hjust = 0, vjust = 0)
+  )
+```
+
+:::  
+
+::::  
+
+
+## Layout (1/2)  
+
+### Patchwork!
+
+[patchwork](https://patchwork.data-imaginist.com/)
+
+>The goal of patchwork is to make it ridiculously simple to combine separate ggplots into the same graphic. As such it tries to solve the same problem as `gridExtra::grid.arrange()` and `cowplot::plot_grid` but using an API that incites exploration and iteration, and scales to arbitrarily complex layouts.
+
+```{r}
+#| code-fold: show
+
+library(patchwork)
+```
+
+## Layout (2/2)
+
+### Combine the two plots  
+
+```{r}
+#| code-fold: true
+#| warning: false
+#| code-line-numbers: "11|"
+
+p1 <- penguins |> 
+  ggplot() +
+  geom_boxplot(aes(x = species, y = bill_depth_mm, fill = species), show.legend = FALSE) +
+  labs(tag = "A") + theme(plot.tag.location = "panel", plot.tag.position = "topright")
+
+p2 <- penguins |> 
+  ggplot() +
+  geom_point(aes(x = bill_length_mm, y = bill_depth_mm, color = species)) +
+  labs(tag = "B") +theme(plot.tag.location = "panel", plot.tag.position = "topright")
+
+(p1 + p2) + plot_layout(guides = "collect")
+```
+
+
+
+
+## Assignment {.smaller}  
+
+### When Online Content Disappears  
+
+:::: {.columns}  
+
+::: {.column width=50%}  
+
+Recreate the plot from the article:  
+
+[Pew Research](https://www.pewresearch.org/data-labs/2024/05/17/when-online-content-disappears/)  
+![](https://www.pewresearch.org/wp-content/uploads/sites/20/2024/05/pl_2024.05.17_link-rot_0_01.png){width=100%}  
+
+:::  
+::: {.column width=50%}  
+
+```{r}
+#| code-fold: show  
+
+# Font looks close to google font "work sans"  
+
+pew_data <- c(38, 35, 31, 30, 26, 31, 32, 27, 22, 15, 8)
+years <- 2013:2023
+color = "#ed9d09"
+
+pew_df <- tibble(year = years, percent = pew_data)
+pew_df
+```
+
+:::  
+
+::::  
+
+## Sandbox
+
+```{r}
+#| code-fold: true
+#| fig-width: 8
+#| fig-height: 5
+#| out-width: 600px
+#| out-height: 375px
+
+library(ggtext)
+
+caption_text = paste(str_wrap("Source: Pew Research Center analysi of a random selection of URLs collected by the Common Crawl web repository (n=999,989) and checked using page and DNS response codes. Web pages defined as inaccessible if they returned a status code of 204, 400, 404, 410, 500, 501, 502, 503, 523 or did not return a valid status code.",
+                 width = 86),
+        "\n\"When Online Content Disappears\"")
+
+pew_df |> 
+  ggplot() +
+  geom_line(aes(x = year, y = percent), color = color, linewidth = 3) +
+  geom_point(aes(x = year, y = percent), shape = 21 , color = color, fill = "white", size = 4, stroke = 1) +
+  geom_text(aes(x = year, y = percent, label = paste0(percent, "%")), nudge_y = 2.2, nudge_x = 0.0, size = 4, color = color, data = filter(pew_df, year == 2013)) +
+  geom_text(aes(x = year, y = percent, label = percent), nudge_y = 2.2, nudge_x = 0, size = 4, color = color, data = filter(pew_df, year >= 2014)) +
+#  annotate("text", x = 2014.05, y = 5, label = "PEW RESEARCH CENTER", color = "black", size = 4, fontface = "bold") +
+  labs(
+    title = "38% of webpages from 2013 are no longer accessible",
+    subtitle = "% of links from each year that are no longer accessible as of October 2023",
+    x = "",
+    y = NULL,
+    caption = caption_text,
+    tag = "PEW RESEARCH CENTER"
+    ) +
+  theme_minimal() +
+  scale_y_continuous(limits = c(5, 42)) +
+  scale_x_continuous(limits = c(2012.75, 2023.25), breaks = 2013:2023) +
+  theme(
+    plot.title = element_markdown(size = 20, face = "bold"),
+    plot.title.position = "plot",
+    plot.subtitle = element_markdown(size = 14, face = "italic", color = "#666666"),
+    plot.caption = element_text(size = 12, face = "italic", hjust = 0, color = "#666666"),
+    plot.caption.position = "plot",
+    axis.text.x = element_text(size = 12),
+    axis.line.x = element_line(color = "black"),
+    axis.ticks.x = element_line(color = "black"),
+    axis.text.y = element_blank(),
+    plot.tag.location = "plot",
+    plot.tag.position = "bottomright",
+    plot.tag = element_text(size = 12, face = "bold", color = "black"),
+    panel.grid = element_blank()
+  )
+```
+
+# {.theme-section visibility=uncounted}  
+
+<h1>End of Module 4</h1>  
+
+## References 
+
+::: {#refs}
+:::  
