@@ -1,0 +1,1254 @@
+---
+title: "Tree-Based Methods"
+author: "Ray J. Hoobler"
+subtitle: "Module 12"
+bibliography: references.bib
+execute:
+  echo: true
+  cache: false # requires a specific page
+title-slide-attributes:
+  data-background-color: "#1178c9"
+format: 
+  revealjs:
+    df-print: paged
+    toc: true
+    toc-depth: 1
+    toc-title: "Table of Contents"
+    embed-resources: true
+    link-external-icon: true
+    link-external-newwindow: true
+    incremental: false
+    smaller: false
+    scrollable: true
+    transition: fade
+    code-fold: show  
+    code-tools: true
+    show-slide-number: all
+    slide-number: c/t
+    footer: "Applied Statistical Techniques"
+    theme: [simple, mysimple.scss]
+---
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(ISLR2)
+# install.packages("tree")
+library(tree)
+```
+
+# Basics of Decision Trees -- Regression {.theme-section}  
+
+## Hitters Data Set from ISLR2
+
+```{r}
+hitters <- na.omit(Hitters) |> as_tibble()
+hitters
+```
+
+## Regression Using the Hitters {.smaller}
+
+```{r}
+# fit the data to a simple regression model based on the number of years played and the number of hits from the previous year
+# restrict the number of splits to 3 by setting the mincut parameter to 50
+
+hitters_tree_8_1 <- tree(log(Salary) ~ Years + Hits, data = hitters, mincut = 50)
+plot(hitters_tree_8_1)
+text(hitters_tree_8_1, digits = 3)
+```
+
+
+
+## Plot of Data with Decision Tree Values {.smaller}  
+
+:::: {.columns}
+
+::: {.column width="50%"}  
+
+### The red segments are based on splits from the decision tree  
+
+```{r}
+#| code-fold: true
+
+hitters |> 
+  ggplot() +
+  geom_point(aes(x = Years, y = Hits), color = "blue", position = position_jitter(width = 0.1, height = 0.1), shape = 21) +
+  geom_segment(x = 4.5, xend = 25, y = 117.5, color = "red") +
+  geom_vline(xintercept = 4.5, color = "red") +
+  annotate("text", x = 24, y = 125, label = "117.5", color = "red") +
+  annotate("text", x = 3.9, y = 0, label = "4.5", color = "red") +
+  annotate("text", x = 2.5, y = 190, label = "R1", color = "black", size = 6) +
+  annotate("text", x = 11.4, y = 18, label = "R2", color = "black", size = 6) +
+  annotate("text", x = 16.3, y = 190, label = "R3", color = "black", size = 6) +
+  theme_light()
+```
+
+:::  
+
+::: {.column width="50%"}  
+
+### Generating Splits?
+
+Goal is to find regions $R_1, \ldots, R_J$ that minimize the residual sum of squares (RSS) within each region.
+
+$$
+\sum_{j=1}^{J} \sum_{i \in R_j} (y_i - \hat{y}_{R_j})^2
+$$
+
+:::  
+
+::::  
+
+## Regression Tree Analysis for the Hitters Data (ISLR2 Figure 8.4) {.smaller}  
+
+Nine (unnamed features) were included in the model from figure 8.4; however, I couldn't reproduce the same results, so I used 10 features that were not based on cumulative statistics. 
+
+```{r}
+#| code-fold: true
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: 600px
+#| out-height: 400px
+
+set.seed(1)
+
+train <- sample(1:nrow(hitters), nrow(hitters)/2 + 1)
+# hitters[train, ]
+# hitters[-train,]
+
+# AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors
+
+hitters_tree_8_4 <- tree(
+  formula = log(Salary) ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors, 
+  data = hitters, 
+  control = tree.control(nobs = length(train), minsize = 2, mindev = 0.01),
+  subset = train)
+
+# par(pin = c(6, 4))  # Sets physical dimensions in inches (width, height)
+plot(hitters_tree_8_4)
+text(hitters_tree_8_4, pretty = 0, digits = 3, cex = 0.7, adj = c(0.5, 0.8))
+```
+
+## Regression Tree Analysis for the Hitters Dataset (ISLR2 Figure 8.5) {.smaller}  
+
+
+```{r}
+set.seed(1)
+cv_hitters_tree_8_4 <- cv.tree(hitters_tree_8_4, FUN = prune.tree, K = 10)
+plot(cv_hitters_tree_8_4$size, cv_hitters_tree_8_4$dev, type = "b")
+cv_hitters_tree_8_4
+```
+
+
+
+## Pruning the Tree
+
+### Cost complexity pruning 
+
+:::: {.columns}  
+
+::: {.column width="30%"}
+$$
+\sum_{m=1}^{|T|} \sum_{i: \,i \in R_m} (y_i - \hat{y}_{R_m})^2 + \alpha |T|
+$$
+:::
+::: {.column width="70%"}  
+
+```{r}
+#| code-fold: true
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: 600px
+#| out-height: 400px
+ 
+prune_cv_hitters_tree_8_4 <- prune.tree(hitters_tree_8_4, best = 9)
+plot(prune_cv_hitters_tree_8_4)
+text(prune_cv_hitters_tree_8_4, pretty = 0, digits = 3)
+```
+
+:::  
+
+:::: 
+
+## Summary of the Pruned Tree  
+
+```{r}
+summary(prune_cv_hitters_tree_8_4)
+```
+
+## Prediction From Tree-Based Regression 
+
+```{r}
+#| code-fold: true
+
+salary_pred <- predict(prune_cv_hitters_tree_8_4, newdata = hitters[-train,])
+
+tibble(
+  salary_pred = salary_pred,
+  actual_salary = hitters[-train,]$Salary
+) |>
+  ggplot() +
+  geom_point(aes(x = actual_salary, y = exp(salary_pred)), color = "blue", position = position_jitter(width = 10, height = 10), shape = 21) +
+  geom_abline(color = "red", linetype = "dashed") +
+  labs(
+    x = "Actual Salary",
+    y = "Predicted Salary",
+    title = "Predicted vs Actual Salaries"
+  ) +
+  theme_light()
+```
+
+# Basics of Decision Trees -- Classification {.theme-section}  
+
+## Classification Crieteria {.smaller}
+
+For regression, we used RSS as the criterion for splitting. This is not an option for classification.
+
+Options:
+
+**Classification Error Rate**: The fraction of training observations in a region that do not belong to the most common class.
+
+$$
+E = 1 - \max_k \hat{p}_{mk}
+$$
+
+$\hat{p}_{mk}$ is the proportion of observations in the $m$th region from the $k$th class.
+
+**Gini Index**: A measure of total variance across the $K$ classes.
+
+$$
+G = \sum_{k=1}^{K} \hat{p}_{mk} (1 - \hat{p}_{mk})
+$$
+
+The Gini index is small if all the $\hat{p}_{mk}$ are close to 0 or 1; indicating a node with mostly one class.
+
+**Entropy**: A measure of disorder in a region.
+
+$$
+D = -\sum_{k=1}^{K} \hat{p}_{mk} \log \hat{p}_{mk}
+$$
+
+Entropy will be near zero if the $\hat{p}_{mk}$ are all near zero or one; again, indicating a node with mostly one class.
+
+## Classification Using the Hart Data {.smaller}  
+
+[UCI Machine Learning Repository: Heart Disease](https://doi.org/10.24432/C52P4X)
+
+
+Attribute Information:
+   -- Only 14 used
+      -- 1. #3  (age)       
+      -- 2. #4  (sex)       
+      -- 3. #9  (cp)        
+      -- 4. #10 (trestbps)  
+      -- 5. #12 (chol)      
+      -- 6. #16 (fbs)       
+      -- 7. #19 (restecg)   
+      -- 8. #32 (thalach)   
+      -- 9. #38 (exang)     
+      -- 10. #40 (oldpeak)   
+      -- 11. #41 (slope)     
+      -- 12. #44 (ca)        
+      -- 13. #51 (thal)      
+      -- 14. #58 (num)       (the predicted attribute)
+
+## Classification Using the Hart Data (cont.) {.smaller}  
+
+3 age: age in years
+4 sex: sex (1 = male; 0 = female)    
+
+9 cp: chest pain type
+        -- Value 1: typical angina
+        -- Value 2: atypical angina
+        -- Value 3: non-anginal pain
+        -- Value 4: asymptomatic
+10 trestbps: resting blood pressure (in mm Hg on admission to the hospital)
+
+12 chol: serum cholestoral in mg/dl
+
+16 fbs: (fasting blood sugar > 120 mg/dl)  (1 = true; 0 = false)
+
+19 restecg: resting electrocardiographic results  
+      -- Value 0: normal  
+      -- Value 1: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV)  
+      -- Value 2: showing probable or definite left ventricular hypertrophy by Estes' criteria  
+
+32 thalach: maximum heart rate achieved
+    
+38 exang: exercise induced angina (1 = yes; 0 = no)
+
+40 oldpeak = ST depression induced by exercise relative to rest
+41 slope: the slope of the peak exercise ST segment
+
+44 ca: number of major vessels (0-3) colored by flourosopy
+
+51 thal: 3 = normal; 6 = fixed defect; 7 = reversable defect
+
+58 num: diagnosis of heart disease (angiographic disease status)  
+
+  - Value 0: < 50% diameter narrowing  
+  - Value 1: > 50% diameter narrowing  
+  
+(in any major vessel: attributes 59 through 68 are vessels)
+
+## Classification Using the Hart Data (cont.) {.smaller}  
+
+### Inspect the data
+
+```{r}
+# Using the abreviations above the column names are
+heart_col_names <- c("age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal", "num")
+
+heart <- read_csv("datasets/heart+disease/processed.cleveland.data", col_names = heart_col_names, na = "?")
+heart
+heart |> count(num)
+```
+
+
+## Classification Using the Hart Data (cont.)  
+
+::: {.transparent}
+From the article, describing the ***num*** variable:    
+
+> The fluoroscopic data consisted of the number of major vessels that appeared to contain calcium.  
+:::
+
+## Set `num` as a binary factor {.smaller}
+
+```{r}
+heart_clean <- heart |>
+  mutate(num_binary = if_else(num == 0, 0, 1)) |>
+  select(-num) |> 
+  mutate(
+    num_binary = factor(num_binary, levels = c(0, 1), labels = c("no", "yes")),
+    sex = factor(sex, levels = c(0, 1), labels = c("female", "male")),
+    cp = as.factor(cp),
+    fbs = as.factor(fbs),
+    restecg = as.factor(restecg),
+    exang = as.factor(exang),
+    slope = as.factor(slope),
+    ca = as.numeric(ca),
+    thal = as.factor(thal)
+    )
+
+heart_clean
+```
+
+## Classification Tree for the Hart Data {.smaller}  
+
+```{r}
+#| code-fold: true
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: 600px
+#| out-height: 400px
+set.seed(1)
+train <- sample(1:nrow(heart_clean), nrow(heart_clean)/2 + 1)
+# summary(heart_tree)
+
+heart_tree <- tree(num_binary ~ ., data = heart_clean, subset = train)
+plot(heart_tree)
+text(heart_tree, pretty = 0, digits = 3)
+```
+
+## Cross-Validation of the Hart Data Classifiation Model {.smaller}
+
+:::: {.columns}
+
+::: {.column width="50%"}  
+
+```{r}
+set.seed(1)
+cv_heart_tree <- cv.tree(heart_tree, FUN = prune.tree, K = 10)
+plot(cv_heart_tree$size, cv_heart_tree$dev, type = "b")
+```
+
+:::  
+
+::: {.column width="40%"}  
+
+### Plot of pruned tree
+
+```{r}
+#| code-fold: true
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: 600px
+#| out-height: 400px
+prune_heart_tree <- prune.tree(heart_tree, best = 6)
+plot(prune_heart_tree)
+text(prune_heart_tree, pretty = 0, digits = 3)
+```
+
+:::
+
+::::  
+
+## Prediction From Tree-Based Classification {.smaller}
+
+| | True Negative (N) | True Positive (P) | Total |
+|---|---|---|---|
+| **Predicted Negative (N)** | TN | FN | N* |
+| **Predicted Positive (P)** | FP | TP | P* |
+| **Total** | N | P | Total |
+
+
+
+```{r}
+#| code-fold: true
+#| fig-width: 12
+#| fig-height: 8
+#| out-width: 600px
+#| out-height: 400px
+#| warning: true
+
+heart_pred <- predict(prune_heart_tree, newdata = heart_clean[-train,], type = "class")
+table(heart_pred, heart_clean[-train,]$num_binary)
+
+# Accuracy TP + TN / TP + TN + FP + FN
+paste("Accuracy ( (TP + TN) / (TP + TN + FP + FN) ):", round(mean(heart_pred == heart_clean[-train,]$num_binary), 3))
+
+# Sensitivity, Recall (1 - Type II Error)
+paste("Sensitivity, Recall, Power ( TP/P ):", round(sum(heart_pred == "yes" & heart_clean[-train,]$num_binary == "yes") / sum(heart_clean[-train,]$num_binary == "yes"), 3))
+
+# 1 - Specificity (Type I Error): FP/N 
+paste("1 - Specificity, Type II Error ( FP/N ):", round(sum(heart_pred == "no" & heart_clean[-train,]$num_binary == "no") / sum(heart_clean[-train,]$num_binary == "no"), 3))
+
+# Precision: TP/P*
+paste("Precision ( TP/P* ):", round(sum(heart_pred == "yes" & heart_clean[-train,]$num_binary == "yes") / sum(heart_pred == "yes"), 3))
+
+```
+
+## Advantags and Disadvantes of Trees (ISLR2 authors)  
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+::: {.fragment}  
+
+### Advantages
+
+- Easy to explain    
+- Mirror human decision-making  
+- Can be displayed graphically 
+- Can handle qualitative predictors without the need for dummy variables  
+
+:::  
+:::  
+::: {.column width="50%"}  
+::: {.fragment}  
+
+### Disadvantages  
+
+- Poor predictive accuracy  
+- "Non-robust"  (Small changes in the data can lead to large changes in the final estimated tree.)  
+
+:::  
+:::  
+
+::::  
+
+# Bagging and Random Forests {.theme-section}  
+
+## Bagging {auto-animate=true auto-animate-duration="2"}  
+
+::: {.r-stack}  
+::: {data-id="box1"}  
+Bagging  
+::: 
+:::
+
+## Bagging {auto-animate=true auto-animate-duration="2"}    
+
+::: {.r-fit-text} 
+::: {data-id="box1"}  
+<span style="color: blue;">B</span>ootstrap <span style="color: blue;">**agg**</span>regat<span style="color: blue;">**ing**</span>  
+:::  
+:::  
+
+::: {.fragment} 
+::: {.transparent}  
+**Description**  
+Bootstrap aggregating (bagging) is a general-purpose procedure for reducing the variance of a statistical learning method.
+
+The basic idea is to average multiple models to reduce the variance of the model.
+
+Here, the bootstrap method involves repeatedly sampling observations from the training data set, fitting a model to each sample, and then combining the models to create a single predictive model.  
+:::  
+:::  
+
+## Bagging Summary  
+
+>To apply bagging to regression trees, we simply construct *B* regression trees using *B* bootstrapped training sets, and average the resulting predictions. These trees are grown deep, and are not pruned. Hence each individual tree has high variance, but low bias. Averaging these B trees reduces the variance. Bagging has been demonstrated to give impressive improvements in accuracy by combining together hundreds or even thousands of trees into a single procedure.
+>
+>ISLP2, p 341
+
+## Bagging Example (1/6) {.smaller auto-animate="true"}  
+
+```r
+library(ranger)
+library(caret)
+```
+
+## Bagging Example (2/6) {.smaller auto-animate="true"}  
+
+```r
+library(ranger)
+library(caret)
+
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+```
+
+
+## Bagging Example (3/6) {.smaller auto-animate="true"}  
+
+```r
+library(ranger)
+library(caret)
+
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+
+# Train random forest model - note probability = FALSE for class predictions
+rf_model <- ranger(
+  num_binary ~ .,           # Formula: predict target using all other variables
+  data = train_data,        # Training data
+  num.trees = 500,          # Number of trees
+  mtry = 13,                # Use all variables for each split 
+  importance = 'impurity',  # Calculate variable importance (Gini index for classification)
+  probability = FALSE       # Get class predictions instead of probabilities
+)
+```
+
+## Bagging Example (4/6) {.smaller auto-animate="true"}  
+
+```r
+library(ranger)
+library(caret)
+
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+
+# Train random forest model - note probability = FALSE for class predictions
+rf_model <- ranger(
+  num_binary ~ .,           # Formula: predict target using all other variables
+  data = train_data,        # Training data
+  num.trees = 500,          # Number of trees
+  mtry = 13,                # Use all variables for each split 
+  importance = 'impurity',  # Calculate variable importance (Gini index for classification)
+  probability = FALSE       # Get class predictions instead of probabilities
+)
+
+# Make predictions on test set - directly get class predictions
+predictions <- predict(rf_model, test_data)
+pred_class <- predictions$predictions  # Class predictions
+```
+
+## Bagging Example (5/6) {.smaller auto-animate="true"}  
+
+```r
+library(ranger)
+library(caret)
+
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+
+# Train random forest model - note probability = FALSE for class predictions
+rf_model <- ranger(
+  num_binary ~ .,           # Formula: predict target using all other variables
+  data = train_data,        # Training data
+  num.trees = 500,          # Number of trees
+  mtry = 13,                # Use all variables for each split 
+  importance = 'impurity',  # Calculate variable importance (Gini index for classification)
+  probability = FALSE       # Get class predictions instead of probabilities
+)
+
+# Make predictions on test set - directly get class predictions
+predictions <- predict(rf_model, test_data)
+pred_class <- predictions$predictions  # Class predictions
+
+# Calculate accuracy
+accuracy <- mean(pred_class == test_data$num_binary)
+
+# Get variable importance
+var_importance <- data.frame(
+  Feature = names(importance(rf_model)),
+  Importance = importance(rf_model)
+)
+# var_importance <- var_importance[order(var_importance$Importance, decreasing = TRUE), ]
+var_importance <- as_tibble(var_importance) |> 
+  arrange(desc(Importance))
+
+var_importance
+```
+
+
+
+## Bagging Example (6/6) {.smaller}  
+
+```{r}
+library(ranger)
+library(caret)
+
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+
+# Train random forest model - note probability = FALSE for class predictions
+rf_model <- ranger(
+  num_binary ~ .,           # Formula: predict target using all other variables
+  data = train_data,        # Training data
+  num.trees = 500,          # Number of trees
+  mtry = 13,                # Use all variables for each split 
+  importance = 'impurity',  # Calculate variable importance (Gini index for classification)
+  probability = FALSE       # Get class predictions instead of probabilities
+)
+
+# Make predictions on test set - directly get class predictions
+predictions <- predict(rf_model, test_data)
+pred_class <- predictions$predictions  # Class predictions
+
+# Calculate accuracy
+accuracy <- mean(pred_class == test_data$num_binary)
+
+# Get variable importance
+var_importance <- data.frame(
+  Feature = names(importance(rf_model)),
+  Importance = importance(rf_model)
+)
+# var_importance <- var_importance[order(var_importance$Importance, decreasing = TRUE), ]
+var_importance <- as_tibble(var_importance) |> 
+  arrange(desc(Importance))
+
+var_importance
+```
+
+
+
+## Evaluation of Bagging Model {.smaller}  
+
+```{r}
+#| code-fold: true
+
+# Print results
+print("Model Performance:")
+print(paste("Accuracy:", round(accuracy, 3)))
+print(paste("Senstivity:", round(sum(pred_class == "yes" & test_data$num_binary == "yes") / sum(test_data$num_binary == "yes"), 3)))
+print(paste("Precision:", round(sum(pred_class == "yes" & test_data$num_binary == "yes") / sum(pred_class == "yes"), 3)))
+
+print("Confusion Matrix:")
+print(table(Predicted = pred_class, Actual = test_data$num_binary))
+```
+
+
+## Variable Importance Plot {.smaller}  
+ 
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| fig-height: 4
+#| out-width: 600px
+#| out-height: 400px
+
+var_importance |> 
+  ggplot(aes(y = reorder(Feature, Importance), x = Importance)) +
+  geom_col(fill = "skyblue") +
+  labs(
+    title = "Variable Importance Plot for Heart Data",
+    subtitle = "Mean decrease in Gini index per variable",
+    x = "Variable Importance",
+    y = NULL
+  ) +
+  theme_light() +
+  theme(
+    plot.title.position = "plot"
+  )
+```
+
+## Ou-of-Bag Error Estimation  
+
+>It turns out that there is a very straightforward way to estimate the test
+>error of a bagged model, without the need to perform cross-validation or
+>the validation set approach. Recall that the key to bagging is that trees are
+>repeatedly fit to bootstrapped subsets of the observations. One can show
+>that on average, each bagged tree makes use of around two-thirds of the
+>observations. The remaining one-third of the observations not used to fit a
+>given bagged tree are referred to as the out-of-bag (OOB) observations. 
+>
+>. . . 
+>
+>The resulting OOB error is a valid estimate of the test error for the bagged model, 
+>since the response for each observation is predicted using only the trees that were 
+>not fit using that observation. 
+>
+>ISLR2, p 342
+
+
+## Out-of-Bag Error Plot and results {.smaller}  
+
+```{r}
+#| code-fold: true
+#| fig-width: 6
+#| fig-height: 4
+#| out-width: 600px
+#| out-height: 400px
+
+# To track OOB error by number of trees, we can create multiple models
+tree_numbers <- 1:500
+oob_errors <- numeric(length(tree_numbers))
+
+for(i in seq_along(tree_numbers)) {
+  rf_temp <- ranger(
+    num_binary ~ .,
+    data = heart_clean,
+    num.trees = tree_numbers[i],
+    importance = 'impurity',
+    probability = FALSE,
+    oob.error = TRUE
+  )
+  oob_errors[i] <- rf_temp$prediction.error
+}
+
+# Create data frame of results
+oob_results <- data.frame(
+  Trees = tree_numbers,
+  OOB_Error = oob_errors
+)
+
+# Print OOB error progression
+# print("OOB Error by Number of Trees:")
+# print(oob_results)
+
+oob_results |> 
+  ggplot(aes(x = Trees, y = OOB_Error)) +
+  geom_line() +
+  theme_light()
+
+# Additional model information
+print("\nModel Information:")
+print(paste("Number of trees:", rf_model$num.trees))
+print(paste("Number of independent variables:", rf_model$num.independent.variables))
+print(paste("Mtry:", rf_model$mtry))
+
+# Get variable importance with OOB error increase
+var_importance <- data.frame(
+  Feature = names(importance(rf_model)),
+  Importance = importance(rf_model)
+)
+var_importance <- var_importance[order(var_importance$Importance, decreasing = TRUE), ]
+
+```
+
+
+## Random Forest Example {.smaller}  
+
+```{r}
+#| code-line-numbers: "|14|"
+library(ranger)
+library(caret)
+
+set.seed(123)
+train_index <- createDataPartition(heart_clean$num_binary, p = 0.7, list = FALSE)
+train_data <- heart_clean[train_index, ]
+test_data <- heart_clean[-train_index, ]
+
+# Train random forest model - note probability = FALSE for class predictions
+rf_model <- ranger(
+  num_binary ~ .,           # Formula: predict target using all other variables
+  data = train_data,        # Training data
+  num.trees = 500,          # Number of trees
+  mtry = floor(sqrt(13)),   # Use sqrt(p) variables for each split
+  importance = 'impurity',  # Calculate variable importance (Gini index for classification)
+  probability = FALSE       # Get class predictions instead of probabilities
+)
+
+# Make predictions on test set - directly get class predictions
+predictions <- predict(rf_model, test_data)
+pred_class <- predictions$predictions  # Class predictions
+
+# Calculate accuracy
+accuracy <- mean(pred_class == test_data$num_binary)
+
+# Calculate precision
+precision <- sum(pred_class == "yes" & test_data$num_binary == "yes") / sum(pred_class == "yes")
+
+# Calculate sensitivity
+sensitivity <- sum(pred_class == "yes" & test_data$num_binary == "yes") / sum(test_data$num_binary == "yes")
+
+print("Model Performance:")
+print(paste("Accuracy:", round(accuracy, 3)))
+print(paste("Senstivity:", round(sensitivity, 3)))
+print(paste("Precision:", round(precision, 3)))
+```
+
+# Homework {.theme-section}  
+
+#  {.theme-section visibility="uncounted"}
+
+<h1>End of Module 12</h1>
+
+## Backup Materials {visibility="hidden"}
+
+```{r}
+library(tidymodels)
+library(ISLR2)  # For the Hitters dataset
+
+# First, let's properly prepare the data
+data(Hitters)
+Hitters <- na.omit(Hitters)  # Remove missing values
+
+# Create train/test split
+set.seed(123)  # For reproducibility
+train_split <- initial_split(Hitters, prop = 0.8)
+training_data <- training(train_split)
+testing_data <- testing(train_split)
+
+# For a single decision tree
+decision_tree_spec <- decision_tree() %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+# For random forest
+rf_spec <- rand_forest() %>%
+  set_engine("ranger") %>%
+  set_mode("regression")
+
+# Workflow example
+tree_workflow <- workflow() %>%
+  add_model(decision_tree_spec) %>%
+  add_formula(log(Salary) ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors)
+
+# Fit the model
+tree_fit <- tree_workflow %>%
+  fit(data = training_data)
+
+# Specify parameters to tune
+tree_spec <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = tune()
+) %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+# Create a tuning grid
+tree_grid <- grid_regular(
+  cost_complexity(),
+  tree_depth(),
+  levels = 5
+)
+
+# Tune with cross-validation
+tree_tune <- tune_grid(
+  tree_spec,
+  log(Salary) ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors,
+  resamples = vfold_cv(training_data, v = 5),
+  grid = tree_grid
+)
+
+# Collect metrics
+tree_tune %>% collect_metrics()
+
+# Visualize results
+tree_tune %>%
+  autoplot()
+```
+
+
+```{r}
+# 1. Examine tuning results in detail
+tune_results <- tree_tune %>% collect_metrics()
+print(tune_results)
+
+# Find best model parameters
+best_params <- tree_tune %>%
+  select_best(metric = "rmse")
+print(best_params)
+
+# 2. Finalize the model with best parameters
+final_tree_spec <- decision_tree(
+  cost_complexity = best_params$cost_complexity,
+  tree_depth = best_params$tree_depth
+) %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+# Create final workflow
+final_workflow <- workflow() %>%
+  add_model(final_tree_spec) %>%
+  add_formula(log(Salary) ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors)
+
+# Fit final model on full training data
+final_fit <- final_workflow %>%
+  fit(data = training_data)
+
+# 3. Make predictions on test set
+test_predictions <- predict(final_fit, testing_data) %>%
+  bind_cols(testing_data)
+
+# Calculate test set performance - corrected version
+test_metrics <- test_predictions %>%
+  mutate(.pred_unlogged = exp(.pred)) %>%  # Create unlogged predictions
+  metrics(truth = Salary, estimate = .pred_unlogged)
+print(test_metrics)
+
+# For a more detailed view of model performance
+test_predictions %>%
+  mutate(.pred_unlogged = exp(.pred)) %>%
+  summarize(
+    rmse = sqrt(mean((Salary - .pred_unlogged)^2)),
+    mae = mean(abs(Salary - .pred_unlogged)),
+    r_squared = cor(Salary, .pred_unlogged)^2
+  )
+
+# Visualization with corrected predictions
+ggplot(test_predictions %>% mutate(.pred_unlogged = exp(.pred)), 
+       aes(y = .pred_unlogged, x = Salary)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(color = "red", linetype = "dashed") +
+  labs(
+    y = "Predicted Salary ($)",
+    x = "Actual Salary ($)",
+    title = "Predicted vs Actual Salaries"
+  ) +
+  theme_light()
+```
+
+```{r}
+# Load the tree package
+library(tree)
+
+# Step 1: Grow the full tree
+iris_tree <- tree(Species ~ ., data = iris)
+
+# Step 2: Perform cross-validation to find optimal tree size
+cv_iris <- cv.tree(iris_tree)
+
+# Step 3: Plot cv error vs tree size to visualize optimal point
+plot(cv_iris$size, cv_iris$dev, type = "b",
+     xlab = "Tree Size", ylab = "Cross-Validation Deviance")
+
+# Step 4: Find the optimal tree size (minimum deviance)
+optimal_size <- cv_iris$size[which.min(cv_iris$dev)]
+
+# Step 5: Prune the tree to optimal size
+pruned_iris <- prune.tree(iris_tree, best = optimal_size)
+
+# Step 6: Plot original and pruned trees side by side
+par(mfrow = c(1,2))
+# Original tree
+plot(iris_tree)
+text(iris_tree)
+title("Original Tree")
+
+# Pruned tree
+plot(pruned_iris)
+text(pruned_iris)
+title("Pruned Tree")
+
+# Print summary information
+cat("\nOriginal tree size:", length(iris_tree$frame$var[iris_tree$frame$var != "<leaf>"]))
+cat("\nOptimal tree size:", optimal_size)
+cat("\nPruned tree size:", length(pruned_iris$frame$var[pruned_iris$frame$var != "<leaf>"]))
+
+# Print summaries of both trees
+cat("\n\nOriginal tree summary:\n")
+print(summary(iris_tree))
+cat("\nPruned tree summary:\n")
+print(summary(pruned_iris))
+```
+
+```{r}
+# Load required packages
+library(tree)
+library(ISLR2)  # For Hitters dataset
+
+# Load and prepare data
+data(Hitters)
+
+# Remove any missing values
+hitters_clean <- na.omit(Hitters)
+hitters_clean$Salary <- log(hitters_clean$Salary)
+
+# Step 1: Grow the full regression tree
+# Predicting Salary based on all other variables
+salary_tree <- tree(Salary ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors, data = hitters_clean)
+
+# Step 2: Perform cross-validation to find optimal tree size
+cv_salary <- cv.tree(salary_tree)
+
+# Step 3: Plot cross-validation results
+par(mfrow = c(2,2))
+
+# Plot 1: CV error vs tree size
+plot(cv_salary$size, cv_salary$dev, type = "b",
+     xlab = "Tree Size", ylab = "Cross-Validation MSE",
+     main = "Cross-Validation Error vs Tree Size")
+points(cv_salary$size[which.min(cv_salary$dev)], 
+       min(cv_salary$dev), col = "red", pch = 19)
+
+# Plot 2: CV error vs k (cost-complexity parameter)
+plot(cv_salary$k, cv_salary$dev, type = "b",
+     xlab = "k (Cost-Complexity Parameter)", 
+     ylab = "Cross-Validation MSE",
+     main = "Cross-Validation Error vs\nCost-Complexity Parameter")
+points(cv_salary$k[which.min(cv_salary$dev)], 
+       min(cv_salary$dev), col = "red", pch = 19)
+
+# Step 4: Find optimal size
+optimal_size <- cv_salary$size[which.min(cv_salary$dev)]
+
+# Step 5: Prune the tree
+pruned_salary <- prune.tree(salary_tree, best = optimal_size)
+
+# Plots 3 & 4: Original and pruned trees
+plot(salary_tree, main = "Original Regression Tree")
+text(salary_tree, pretty = 0)
+
+plot(pruned_salary, main = "Pruned Regression Tree")
+text(pruned_salary, pretty = 0)
+
+# Print summary statistics
+cat("\nRegression Tree Analysis for MLB Hitters' Salaries\n")
+cat("================================================\n")
+cat("\nOriginal tree size:", length(salary_tree$frame$var[salary_tree$frame$var != "<leaf>"]))
+cat("\nOptimal tree size:", optimal_size)
+cat("\nPruned tree size:", length(pruned_salary$frame$var[pruned_salary$frame$var != "<leaf>"]))
+
+# Calculate R-squared for both trees
+original_pred <- predict(salary_tree)
+pruned_pred <- predict(pruned_salary)
+total_ss <- sum((hitters_clean$Salary - mean(hitters_clean$Salary))^2)
+
+r2_original <- 1 - sum((hitters_clean$Salary - original_pred)^2) / total_ss
+r2_pruned <- 1 - sum((hitters_clean$Salary - pruned_pred)^2) / total_ss
+
+cat("\n\nModel Performance:\n")
+cat("Original Tree R-squared:", round(r2_original, 3), "\n")
+cat("Pruned Tree R-squared:", round(r2_pruned, 3), "\n")
+
+# Print detailed summaries
+cat("\nOriginal Tree Summary:\n")
+print(summary(salary_tree))
+cat("\nPruned Tree Summary:\n")
+print(summary(pruned_salary))
+
+# Print important splits
+cat("\nMost Important Splits in Pruned Tree:\n")
+print(pruned_salary$frame[pruned_salary$frame$var != "<leaf>", ])
+```
+
+## Example of prune.tree {visibility="hidden"}
+
+```{r}
+data(fgl, package="MASS")
+fgl.tr <- tree(type ~ ., fgl)
+print(fgl.tr); plot(fgl.tr); text(fgl.tr)
+
+fgl.cv <- cv.tree(fgl.tr,, prune.tree)
+for(i in 1:5)  fgl.cv$dev <- fgl.cv$dev +
+   cv.tree(fgl.tr,, prune.tree)$dev
+fgl.cv$dev <- fgl.cv$dev/5
+plot(fgl.cv)
+```
+
+```{r}
+# Load the glass dataset from MASS package
+data(fgl, package="MASS")
+
+# Create initial decision tree
+fgl.tr <- tree(type ~ ., fgl)
+
+# Print and plot the tree
+# print(fgl.tr)
+plot(fgl.tr)
+text(fgl.tr)
+
+# Initialize vector to store cross-validation results
+# We'll do 5-fold cross-validation
+n_folds <- 5
+cv_results <- vector("list", n_folds)
+
+# Perform cross-validation multiple times and store results
+for(i in 1:n_folds) {
+    cv_results[[i]] <- cv.tree(fgl.tr, FUN=prune.tree)$dev
+}
+
+# Calculate average deviance across all CV runs
+fgl.cv <- cv.tree(fgl.tr, FUN=prune.tree)  # Get structure
+fgl.cv$dev <- Reduce('+', cv_results) / n_folds  # Average the deviances
+
+# Plot cross-validation results
+plot(fgl.cv$k, fgl.cv$dev)
+```
+
+
+```{r}
+# Load the glass dataset from MASS package
+data(fgl, package="MASS")
+
+# Create initial decision tree
+fgl.tr <- tree(type ~ ., fgl)
+
+# Initialize storage for cross-validation
+n_folds <- 5
+cv_results <- vector("list", n_folds)
+
+# Function to calculate MSE from predictions
+calc_mse <- function(tree_obj, data) {
+    # Handle single node trees
+    if(inherits(tree_obj, "singlenode")) {
+        # For single node, predict most common class for all
+        most_common <- names(sort(table(data$type), decreasing=TRUE)[1])
+        preds <- matrix(0, nrow=nrow(data), ncol=length(levels(data$type)))
+        colnames(preds) <- levels(data$type)
+        preds[, most_common] <- 1
+    } else {
+        # Get predictions for regular trees
+        preds <- predict(tree_obj, newdata=data)
+    }
+    
+    # Convert type (factor) to numeric for MSE calculation
+    actual <- as.numeric(data$type)
+    pred_matrix <- as.matrix(preds)
+    # Calculate MSE (using best prediction for each observation)
+    mse <- mean((actual - max.col(pred_matrix))^2)
+    return(mse)
+}
+
+# Perform cross-validation with MSE
+for(i in 1:n_folds) {
+    # Get different sized trees through pruning
+    cv_temp <- cv.tree(fgl.tr, FUN=prune.tree)
+    # For each tree size, calculate MSE
+    sizes <- cv_temp$size
+    mse_results <- numeric(length(sizes))
+    
+    for(j in seq_along(sizes)) {
+        # Prune tree to specific size
+        pruned_tree <- prune.tree(fgl.tr, best=sizes[j])
+        # Calculate MSE for this size
+        mse_results[j] <- calc_mse(pruned_tree, fgl)
+    }
+    
+    cv_results[[i]] <- mse_results
+}
+
+# Average MSE across all CV runs
+avg_mse <- Reduce('+', cv_results) / n_folds
+
+# Create plot structure similar to cv.tree output but with MSE
+fgl.cv <- cv.tree(fgl.tr, FUN=prune.tree)
+fgl.cv$dev <- avg_mse  # Replace deviance with MSE
+
+# Plot results
+plot(fgl.cv$size, fgl.cv$dev, type="b", 
+     xlab="Tree Size", ylab="Mean Squared Error",
+     main="Cross-Validation Results using MSE")
+```
+
+
+
+```{r}
+# Load required libraries
+library(ISLR2)
+library(tree)
+
+# Load and clean the Hitters dataset
+data(Hitters)
+Hitters <- na.omit(Hitters)
+
+# Create new response variable
+Hitters$logSalary <- log(Hitters$Salary)
+
+# Create initial decision tree using log(Salary)
+hit.tr <- tree(logSalary ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + PutOuts + Assists + Errors, Hitters)  # exclude original Salary
+
+# Initialize storage for cross-validation
+n_folds <- 5
+cv_results <- vector("list", n_folds)
+
+# Function to calculate MSE from predictions
+calc_mse <- function(tree_obj, data) {
+    # Handle single node trees
+    if(inherits(tree_obj, "singlenode")) {
+        # For single node, predict mean value for all
+        preds <- rep(mean(data$logSalary), nrow(data))
+    } else {
+        # Get predictions for regular trees
+        preds <- predict(tree_obj, newdata=data)
+    }
+    
+    # Calculate MSE on log scale
+    mse <- mean((data$logSalary - preds)^2)
+    return(mse)
+}
+
+# Perform cross-validation with MSE
+for(i in 1:n_folds) {
+    # Get different sized trees through pruning
+    cv_temp <- cv.tree(hit.tr, FUN=prune.tree)
+    # For each tree size, calculate MSE
+    sizes <- cv_temp$size
+    mse_results <- numeric(length(sizes))
+    
+    for(j in seq_along(sizes)) {
+        # Prune tree to specific size
+        pruned_tree <- prune.tree(hit.tr, best=sizes[j])
+        # Calculate MSE for this size
+        mse_results[j] <- calc_mse(pruned_tree, Hitters)
+    }
+    
+    cv_results[[i]] <- mse_results
+}
+
+# Average MSE across all CV runs
+avg_mse <- Reduce('+', cv_results) / n_folds
+
+# Create plot structure similar to cv.tree output but with MSE
+hit.cv <- cv.tree(hit.tr, FUN=prune.tree)
+hit.cv$dev <- avg_mse  # Replace deviance with MSE
+
+# Plot results
+plot(hit.cv$size, hit.cv$dev, type="b", 
+     xlab="Tree Size", ylab="Mean Squared Error (log scale)",
+     main="Cross-Validation Results using MSE (Log Salary)")
+
+# Add points and grid for better visibility
+points(hit.cv$size, hit.cv$dev, pch=19)
+grid()
+
+# Find optimal tree size
+opt_size <- hit.cv$size[which.min(hit.cv$dev)]
+cat("Optimal tree size:", opt_size, "\n")
+cat("Minimum MSE (log scale):", min(hit.cv$dev), "\n")
+
+# Create and plot optimal tree
+optimal_tree <- prune.tree(hit.tr, best=opt_size)
+plot(optimal_tree)
+text(optimal_tree)
+
+# Optional: Calculate and print RMSE on original salary scale
+calc_salary_rmse <- function(tree_obj, data) {
+    if(inherits(tree_obj, "singlenode")) {
+        log_preds <- rep(mean(data$logSalary), nrow(data))
+    } else {
+        log_preds <- predict(tree_obj, newdata=data)
+    }
+    # Transform predictions back to original scale
+    salary_preds <- exp(log_preds)
+    rmse <- sqrt(mean((data$Salary - salary_preds)^2))
+    return(rmse)
+}
+
+rmse_optimal <- calc_salary_rmse(optimal_tree, Hitters)
+cat("\nRMSE on original salary scale: $", round(rmse_optimal, 2), "\n")
+```
+

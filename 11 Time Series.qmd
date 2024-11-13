@@ -937,7 +937,7 @@ msi_historical
 |----|-------|---|
 |2001|Q1|1250|
 |2001|Q2|988|
-|...|...|...|
+|...|...|...| 
 
 ### And convert to a time series object (tsibble)
 
